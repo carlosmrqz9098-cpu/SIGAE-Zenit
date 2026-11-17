@@ -1,0 +1,175 @@
+import {
+  createContext, useCallback, useContext, useEffect, useRef, useState,
+  type ButtonHTMLAttributes, type ReactNode,
+} from "react";
+import { Icono } from "./Icono";
+
+// ------------------------------------------------------------------ Botón
+type Variante = "principal" | "secundario" | "peligro" | "fantasma";
+
+export function Boton({
+  variante = "principal", cargando, icono, children, className = "", ...resto
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variante?: Variante; cargando?: boolean; icono?: string }) {
+  return (
+    <button
+      className={`btn btn-${variante} ${className}`}
+      disabled={cargando || resto.disabled}
+      aria-busy={cargando || undefined}
+      {...resto}
+    >
+      {cargando ? <span className="giro" aria-hidden /> : icono ? <Icono nombre={icono} tam={18} /> : null}
+      <span>{children}</span>
+    </button>
+  );
+}
+
+// ------------------------------------------------------------------ Estados de pantalla
+export function Cargando({ texto = "Cargando…" }: { texto?: string }) {
+  return (
+    <div className="estado-pantalla" role="status">
+      <span className="giro giro-grande" aria-hidden />
+      <p>{texto}</p>
+    </div>
+  );
+}
+
+export function Vacio({ titulo, texto, accion }: { titulo: string; texto?: string; accion?: ReactNode }) {
+  return (
+    <div className="estado-pantalla vacio">
+      <h3>{titulo}</h3>
+      {texto && <p>{texto}</p>}
+      {accion}
+    </div>
+  );
+}
+
+export function CajaError({ mensaje, reintentar }: { mensaje: string; reintentar?: () => void }) {
+  return (
+    <div className="caja-error" role="alert">
+      <Icono nombre="alerta" />
+      <p>{mensaje}</p>
+      {reintentar && <Boton variante="secundario" onClick={reintentar}>Reintentar</Boton>}
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------ Insignias de estado
+const TONO: Record<string, string> = {
+  Activa: "verde", Activo: "verde", Acreditado: "verde", Exitosa: "verde",
+  Llena: "amarillo", Pendiente: "amarillo", Programado: "azul", Borrador: "gris", "Sin cambios": "gris",
+  Cerrada: "gris", Cerrado: "gris", Evaluada: "azul",
+  Cancelada: "rojo", Inactiva: "rojo", "No acreditado": "rojo", Fallida: "rojo",
+};
+
+export function Insignia({ valor }: { valor: string | null | undefined }) {
+  const v = valor ?? "Pendiente";
+  return <span className={`insignia insignia-${TONO[v] ?? "gris"}`}>{v}</span>;
+}
+
+// ------------------------------------------------------------------ Encabezado de página
+export function Encabezado({ titulo, texto, acciones }: { titulo: string; texto?: string; acciones?: ReactNode }) {
+  return (
+    <header className="encabezado">
+      <div>
+        <h1>{titulo}</h1>
+        {texto && <p>{texto}</p>}
+      </div>
+      {acciones && <div className="encabezado-acciones">{acciones}</div>}
+    </header>
+  );
+}
+
+// ------------------------------------------------------------------ Campo de formulario
+export function Campo({ etiqueta, ayuda, error, children }: { etiqueta: string; ayuda?: string; error?: string; children: ReactNode }) {
+  return (
+    <label className={`campo ${error ? "campo-error" : ""}`}>
+      <span className="campo-etiqueta">{etiqueta}</span>
+      {children}
+      {error ? <span className="campo-msg">{error}</span> : ayuda ? <span className="campo-ayuda">{ayuda}</span> : null}
+    </label>
+  );
+}
+
+// ------------------------------------------------------------------ Ventana modal
+export function Modal({ titulo, abierto, alCerrar, children, pie, ancho }: {
+  titulo: string; abierto: boolean; alCerrar: () => void; children: ReactNode; pie?: ReactNode; ancho?: "normal" | "amplio";
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const d = ref.current;
+    if (!d) return;
+    if (abierto && !d.open) d.showModal();
+    if (!abierto && d.open) d.close();
+  }, [abierto]);
+  return (
+    <dialog
+      ref={ref}
+      className={`modal ${ancho === "amplio" ? "modal-amplio" : ""}`}
+      onCancel={(e) => { e.preventDefault(); alCerrar(); }}
+      aria-labelledby="modal-titulo"
+    >
+      {abierto && (
+        <>
+          <header className="modal-cabeza">
+            <h2 id="modal-titulo">{titulo}</h2>
+            <button className="icono-btn" onClick={alCerrar} aria-label="Cerrar">
+              <Icono nombre="cerrar" />
+            </button>
+          </header>
+          <div className="modal-cuerpo">{children}</div>
+          {pie && <footer className="modal-pie">{pie}</footer>}
+        </>
+      )}
+    </dialog>
+  );
+}
+
+// ------------------------------------------------------------------ Confirmación
+export function Confirmar({ abierto, titulo, texto, accion, peligro, cargando, alConfirmar, alCerrar }: {
+  abierto: boolean; titulo: string; texto: ReactNode; accion: string; peligro?: boolean; cargando?: boolean;
+  alConfirmar: () => void; alCerrar: () => void;
+}) {
+  return (
+    <Modal
+      titulo={titulo}
+      abierto={abierto}
+      alCerrar={alCerrar}
+      pie={
+        <>
+          <Boton variante="fantasma" onClick={alCerrar} disabled={cargando}>Cancelar</Boton>
+          <Boton variante={peligro ? "peligro" : "principal"} onClick={alConfirmar} cargando={cargando}>{accion}</Boton>
+        </>
+      }
+    >
+      <div className="confirmar-texto">{texto}</div>
+    </Modal>
+  );
+}
+
+// ------------------------------------------------------------------ Avisos (toasts)
+type Aviso = { id: number; texto: string; tipo: "ok" | "error" };
+const AvisosCtx = createContext<(texto: string, tipo?: "ok" | "error") => void>(() => {});
+
+export function ProveedorAvisos({ children }: { children: ReactNode }) {
+  const [avisos, setAvisos] = useState<Aviso[]>([]);
+  const avisar = useCallback((texto: string, tipo: "ok" | "error" = "ok") => {
+    const id = Date.now() + Math.random();
+    setAvisos((a) => [...a, { id, texto, tipo }]);
+    setTimeout(() => setAvisos((a) => a.filter((x) => x.id !== id)), tipo === "error" ? 7000 : 4000);
+  }, []);
+  return (
+    <AvisosCtx.Provider value={avisar}>
+      {children}
+      <div className="avisos" aria-live="polite">
+        {avisos.map((a) => (
+          <div key={a.id} className={`aviso aviso-${a.tipo}`} role={a.tipo === "error" ? "alert" : "status"}>
+            <Icono nombre={a.tipo === "ok" ? "check" : "alerta"} tam={18} />
+            <span>{a.texto}</span>
+          </div>
+        ))}
+      </div>
+    </AvisosCtx.Provider>
+  );
+}
+
+export const useAvisos = () => useContext(AvisosCtx);
