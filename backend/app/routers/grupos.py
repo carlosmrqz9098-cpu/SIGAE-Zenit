@@ -5,6 +5,9 @@ del crédito (Acreditado / No acreditado / Pendiente) lo calcula la base de
 datos; nadie lo puede escribir a mano.
 """
 import json
+import csv
+import io
+from fastapi import Depends, HTTPException, Response
 
 from fastapi import APIRouter, Depends
 
@@ -68,3 +71,53 @@ def guardar_metricas(id_actividad: int, body: CapturaLote, usuario: UsuarioActua
         "con_error": sum(1 for r in resultados if not r["guardado"]),
         "resultados": resultados,
     }
+
+def _celda_segura(valor) -> str:
+    """Evita que Excel interprete como fórmula un texto que empiece con = + - @."""
+    texto = "" if valor is None else str(valor)
+    if texto[:1] in ("=", "+", "-", "@"):
+        return "'" + texto
+    return texto
+
+
+def _si_no(valor) -> str:
+    return "Sí" if valor else "No"
+
+
+@router.get("/actividades/{id}/lista.csv")  # ADAPTAR (ver nota 1)
+def descargar_lista_csv(
+    id: int,
+    usuario=Depends(usuario_actual),  # ADAPTAR (ver nota 2)
+    db=Depends(get_db),               # ADAPTAR (ver nota 2)
+):
+    # 1. Buscar la actividad
+    actividad = obtener_actividad(db, id)  # ADAPTAR (ver nota 3)
+    if actividad is None:
+        raise HTTPException(status_code=404, detail="Actividad no encontrada")
+
+    # 2. Revisar permisos: responsable, Personal o Administrador
+    if not puede_gestionar_actividad(usuario, actividad):
+        raise HTTPException(status_code=403, detail="No tienes permiso para esta sección")
+
+    # 3. Traer la lista del grupo
+    alumnos = obtener_lista_grupo(db, id)  # ADAPTAR (ver nota 4)
+
+    # 4. Armar el CSV
+    buffer = io.StringIO()
+    escritor = csv.writer(buffer)
+    escritor.writerow(["Matrícula", "Nombre", "Asistencia (%)", "Evidencia", "Crédito"])
+    for a in alumnos:
+        escritor.writerow([
+            _celda_segura(a["matricula"]),   # ADAPTAR nombres de campos
+            _celda_segura(a["nombre"]),
+            a["asistencia"],
+            _si_no(a["evidencia"]),
+            _si_no(a["credito"]),
+        ])
+
+    # 5. Regresar el archivo (el \ufeff hace que Excel muestre bien acentos y ñ)
+    return Response(
+        content="\ufeff" + buffer.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="lista_actividad_{id}.csv"'},
+    )
