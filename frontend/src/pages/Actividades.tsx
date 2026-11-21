@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { TiraDias } from "../components/Horario";
+import { ThOrdenable, useOrden } from "../components/Orden";
 import { Icono } from "../components/Icono";
 import { Boton, CajaError, Campo, Cargando, Confirmar, Encabezado, Insignia, Modal, useAvisos, Vacio } from "../components/ui";
 import { api, ApiError } from "../lib/api";
@@ -16,6 +17,9 @@ interface Opcion { id: number; texto: string }
 
 const VACIA = { id_periodo: "", id_aula: "", id_responsable: "", nombre: "", descripcion: "", dias: "", hora_inicio: "", hora_fin: "", cupo_maximo: "" };
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+// Columnas que se pueden ordenar con clic en su título
+type ColActividad = "nombre" | "cupo" | "estado";
+const valorActividad = (a: Actividad, c: ColActividad) => (c === "nombre" ? a.nombre : c === "cupo" ? a.cupo_maximo : a.estado);
 
 export function Actividades() {
   const { datos, error, cargando, recargar } = useCarga<Actividad[]>("/api/actividades");
@@ -41,6 +45,7 @@ export function Actividades() {
     (!estado || a.estado === estado) &&
     (!filtro || `${a.nombre} ${a.aula} ${a.responsable ?? ""} ${a.periodo}`.toLowerCase().includes(filtro.toLowerCase())),
   ), [datos, filtro, estado]);
+    const { ordenada, orden, alternar } = useOrden(lista, valorActividad);
 
   function abrir(a: Actividad | "nueva") {
     setErrorForm(null);
@@ -131,10 +136,16 @@ export function Actividades() {
         <div className="tabla-envoltura">
           <table className="tabla">
             <thead>
-              <tr><th scope="col">Actividad</th><th scope="col">Horario</th><th scope="col">Cupo</th><th scope="col">Estado</th><th scope="col"><span className="sr">Acciones</span></th></tr>
+                            <tr>
+                <ThOrdenable columna="nombre" orden={orden} alternar={alternar}>Actividad</ThOrdenable>
+                <th scope="col">Horario</th>
+                <ThOrdenable columna="cupo" orden={orden} alternar={alternar}>Cupo</ThOrdenable>
+                <ThOrdenable columna="estado" orden={orden} alternar={alternar}>Estado</ThOrdenable>
+                <th scope="col"><span className="sr">Acciones</span></th>
+              </tr>
             </thead>
             <tbody>
-              {lista.map((a) => (
+                            {ordenada.map((a) => (
                 <tr key={a.id_actividad}>
                   <td data-col="Actividad">
                     <strong>{a.nombre}</strong>
