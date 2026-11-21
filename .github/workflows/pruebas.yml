@@ -1,0 +1,32 @@
+name: Pruebas del backend
+
+# Corre las pruebas automáticas en cada pull request y en cada cambio a qa o main.
+on:
+  pull_request:
+  push:
+    branches: [qa, main]
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Instalar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Correr las pruebas
+        run: python -m pytest -v
