@@ -28,6 +28,11 @@ interface Respuesta {
 }
 type Captura = { asistencia: string; evidencia: boolean };
 
+// Mejora SCRUM-68: quita acentos y mayúsculas para que "jose" encuentre a "José".
+function normaliza(texto: string) {
+  return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+}
+
 export function Grupo({ params }: { params: Record<string, string> }) {
   const id = Number(params.id);
   const { usuario } = useSesion();
@@ -35,6 +40,7 @@ export function Grupo({ params }: { params: Record<string, string> }) {
   const [captura, setCaptura] = useState<Record<number, Captura>>({});
   const [errores, setErrores] = useState<Record<number, string>>({});
   const [guardando, setGuardando] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
   const avisar = useAvisos();
 
   useEffect(() => {
@@ -51,12 +57,22 @@ export function Grupo({ params }: { params: Record<string, string> }) {
   }, [datos]);
 
   const editables = useMemo(() => (datos?.lista ?? []).filter((a) => a.estado_inscripcion !== "Cancelada"), [datos]);
+  // Los cambios se calculan sobre TODA la lista, no sobre lo filtrado:
+  // si el docente busca a otro alumno, no se pierden las capturas pendientes.
   const cambios = editables.filter((a) => {
     const c = captura[a.id_inscripcion];
     if (!c) return false;
     const antes = a.porcentaje_asistencia === null ? "" : String(Number(a.porcentaje_asistencia));
     return c.asistencia !== antes || c.evidencia !== !!a.evidencia_cumplida;
   });
+
+  // Mejora SCRUM-68: alumnos que se muestran según el buscador (nombre o matrícula).
+  const visibles = useMemo(() => {
+    const lista = datos?.lista ?? [];
+    const q = normaliza(busqueda);
+    if (!q) return lista;
+    return lista.filter((a) => normaliza(a.nombre).includes(q) || normaliza(a.matricula).includes(q));
+  }, [datos, busqueda]);
 
   function valida(v: string) {
     if (v === "") return "Escribe un porcentaje";
@@ -129,50 +145,71 @@ export function Grupo({ params }: { params: Record<string, string> }) {
             {datos.lista.length === 0 ? (
               <Vacio titulo="Nadie se ha inscrito todavía" texto="Cuando los alumnos se inscriban, aparecerán aquí." />
             ) : (
-              <div className="tabla-envoltura">
-                <table className="tabla tabla-captura">
-                  <thead>
-                    <tr>
-                      <th scope="col">Alumno</th>
-                      <th scope="col">Asistencia (%)</th>
-                      <th scope="col">Evidencia</th>
-                      <th scope="col">Crédito</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {datos.lista.map((a) => {
-                      const c = captura[a.id_inscripcion];
-                      const cancelada = a.estado_inscripcion === "Cancelada";
-                      return (
-                        <tr key={a.id_inscripcion} className={cancelada ? "apagada" : ""}>
-                          <td data-col="Alumno">
-                            <strong>{a.nombre}</strong>
-                            <span className="texto-suave">{a.matricula}{cancelada ? " · dado de baja" : ""}</span>
-                          </td>
-                          <td data-col="Asistencia (%)">
-                            <input className={`num ${errores[a.id_inscripcion] ? "con-error" : ""}`} type="number" min={0} max={100} step={1}
-                              inputMode="numeric" disabled={cancelada || !c} value={c?.asistencia ?? ""}
-                              aria-label={`Asistencia de ${a.nombre}`}
-                              onChange={(e) => setCaptura((x) => ({ ...x, [a.id_inscripcion]: { ...x[a.id_inscripcion], asistencia: e.target.value } }))} />
-                            {errores[a.id_inscripcion] && <span className="campo-msg">{errores[a.id_inscripcion]}</span>}
-                          </td>
-                          <td data-col="Evidencia">
-                            <label className="interruptor">
-                              <input type="checkbox" disabled={cancelada || !c} checked={c?.evidencia ?? false}
-                                onChange={(e) => setCaptura((x) => ({ ...x, [a.id_inscripcion]: { ...x[a.id_inscripcion], evidencia: e.target.checked } }))} />
-                              <span>{c?.evidencia ? "Entregada" : "No entregada"}</span>
-                            </label>
-                          </td>
-                          <td data-col="Crédito">
-                            <Insignia valor={cancelada ? "Cancelada" : a.estatus_credito} />
-                            {a.fecha_evaluacion && <span className="texto-suave mini">{fechaHora(a.fecha_evaluacion)}</span>}
-                          </td>
+              <>
+                {/* Mejora SCRUM-68: buscador arriba de la tabla */}
+                <div className="buscador-grupo" style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap", margin: "0.5rem 0 1rem" }}>
+                  <input
+                    type="search"
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    placeholder="Buscar por nombre o matrícula"
+                    aria-label="Buscar alumno por nombre o matrícula"
+                    style={{ flex: "1 1 260px", maxWidth: "420px", padding: "0.5rem 0.75rem" }}
+                  />
+                  {busqueda.trim() && (
+                    <span className="texto-suave">Mostrando {visibles.length} de {datos.lista.length}</span>
+                  )}
+                </div>
+                <div className="tabla-envoltura">
+                  <table className="tabla tabla-captura">
+                    <thead>
+                      <tr>
+                        <th scope="col">Alumno</th>
+                        <th scope="col">Asistencia (%)</th>
+                        <th scope="col">Evidencia</th>
+                        <th scope="col">Crédito</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibles.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="texto-suave">Ningún alumno coincide con “{busqueda.trim()}”.</td>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                      )}
+                      {visibles.map((a) => {
+                        const c = captura[a.id_inscripcion];
+                        const cancelada = a.estado_inscripcion === "Cancelada";
+                        return (
+                          <tr key={a.id_inscripcion} className={cancelada ? "apagada" : ""}>
+                            <td data-col="Alumno">
+                              <strong>{a.nombre}</strong>
+                              <span className="texto-suave">{a.matricula}{cancelada ? " · dado de baja" : ""}</span>
+                            </td>
+                            <td data-col="Asistencia (%)">
+                              <input className={`num ${errores[a.id_inscripcion] ? "con-error" : ""}`} type="number" min={0} max={100} step={1}
+                                inputMode="numeric" disabled={cancelada || !c} value={c?.asistencia ?? ""}
+                                aria-label={`Asistencia de ${a.nombre}`}
+                                onChange={(e) => setCaptura((x) => ({ ...x, [a.id_inscripcion]: { ...x[a.id_inscripcion], asistencia: e.target.value } }))} />
+                              {errores[a.id_inscripcion] && <span className="campo-msg">{errores[a.id_inscripcion]}</span>}
+                            </td>
+                            <td data-col="Evidencia">
+                              <label className="interruptor">
+                                <input type="checkbox" disabled={cancelada || !c} checked={c?.evidencia ?? false}
+                                  onChange={(e) => setCaptura((x) => ({ ...x, [a.id_inscripcion]: { ...x[a.id_inscripcion], evidencia: e.target.checked } }))} />
+                                <span>{c?.evidencia ? "Entregada" : "No entregada"}</span>
+                              </label>
+                            </td>
+                            <td data-col="Crédito">
+                              <Insignia valor={cancelada ? "Cancelada" : a.estatus_credito} />
+                              {a.fecha_evaluacion && <span className="texto-suave mini">{fechaHora(a.fecha_evaluacion)}</span>}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </section>
 
