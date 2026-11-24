@@ -221,8 +221,8 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
 .cifra-destacada { border-color: #a9d8c0; background: var(--verde-claro); }
 .cifra-destacada strong { color: var(--verde-2); }
 .lista-filas { list-style: none; margin: 0; padding: 0; }
-.lista-filas li { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 16px; padding: 12px 0; border-top: 1px solid var(--linea); }
-.lista-filas li:first-child { border-top: 0; }
+.lista-filas > li { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 16px; padding: 12px 0; border-top: 1px solid var(--linea); }
+.lista-filas > li:first-child { border-top: 0; }
 .fila-principal { display: grid; min-width: 0; }
 .fila-principal span { color: var(--tinta-3); font-size: 0.9rem; }
 .ocupacion { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
@@ -392,8 +392,8 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
   main { padding-top: 20px; }
   .rejilla-2, .rejilla-3 { grid-template-columns: 1fr; }
   .credito { justify-items: start; }
-  .lista-filas li { grid-template-columns: 1fr auto; }
-  .lista-filas li .tira { grid-column: 1 / -1; order: 3; }
+  .lista-filas > li { grid-template-columns: 1fr auto; }
+  .lista-filas > li .tira { grid-column: 1 / -1; order: 3; }
   .ocupacion li { grid-template-columns: 1fr auto; }
   .ocupacion-barra { grid-column: 1 / -1; order: 3; }
 
@@ -414,3 +414,11 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* ------------------------------------------------------------- alumno: filtro por día y choques de horario (Iván) */
+.filtro-dias { border: 0; padding: 0; min-width: 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: -8px 0 20px; }
+.filtro-dias > span { color: var(--tinta-2); font-size: 0.92rem; }
+.filtro-dias .dia-chip span { min-width: 44px; height: 36px; }
+.filtro-cuenta { color: var(--tinta-3); font-size: 0.88rem; margin: -8px 0 14px; }
+.choque { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 0; padding: 6px 10px; border-radius: var(--r); background: var(--amarillo-claro); color: #6b4b06; font-size: 0.86rem; font-weight: 600; }
+.progreso-ayuda { margin: 8px 0 0; color: var(--tinta-3); font-size: 0.88rem; }

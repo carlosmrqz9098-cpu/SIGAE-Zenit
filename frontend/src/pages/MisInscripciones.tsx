@@ -7,10 +7,23 @@ import { Enlace } from "../lib/router";
 import type { MiInscripcion } from "../lib/tipos";
 import { useCarga } from "../lib/useCarga";
 
+/** Qué le falta al alumno, en palabras. Solo informa; el estatus lo calcula el sistema. */
+function siguientePaso(i: MiInscripcion) {
+  if (i.estatus_credito === "Acreditado") return "¡Listo! Tu crédito ya está acreditado.";
+  if (i.estado_inscripcion === "Evaluada") return null;
+  const quien = i.responsable ?? "tu responsable";
+  if (i.porcentaje_asistencia === null && i.evidencia_cumplida === null)
+    return `${quien} todavía no captura tu asistencia ni tu evidencia.`;
+  if (!i.evidencia_cumplida) return `Entrega tu evidencia a ${quien}; se registra en el sistema cuando la recibe.`;
+  return "Sigue asistiendo: tu crédito se calcula al cerrar la actividad.";
+}
+
 function Progreso({ i }: { i: MiInscripcion }) {
   if (i.estado_inscripcion === "Cancelada") return <p className="texto-suave">Te diste de baja de esta actividad.</p>;
   const asistencia = i.porcentaje_asistencia;
+  const paso = siguientePaso(i);
   return (
+    <>
     <div className="progreso">
       <div className="progreso-item">
         <span>Asistencia</span>
@@ -26,6 +39,8 @@ function Progreso({ i }: { i: MiInscripcion }) {
         {i.evidencia_cumplida === null ? <em>Sin capturar</em> : i.evidencia_cumplida ? <strong className="ok">Entregada</strong> : <strong className="no">No entregada</strong>}
       </div>
     </div>
+    {paso && <p className="progreso-ayuda">{paso}</p>}
+    </>
   );
 }
 

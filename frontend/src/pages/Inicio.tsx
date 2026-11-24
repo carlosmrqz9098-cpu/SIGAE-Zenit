@@ -64,7 +64,7 @@ export function Inicio() {
             <>
               <section className="cifras">
                 <Cifra valor={datos.indicadores.inscripciones_activas} texto="inscripciones activas" />
-                <Cifra valor={datos.indicadores.acreditadas} texto="créditos acreditados" destacar />
+                <Cifra valor={datos.indicadores.acreditadas} texto="créditos acreditados" destacar={(datos.indicadores.acreditadas ?? 0) > 0} />
                 <Cifra valor={datos.indicadores.pendientes} texto="en espera de evaluación" />
                 <Cifra valor={datos.indicadores.actividades_disponibles} texto="actividades con lugar" />
               </section>
