@@ -509,3 +509,5 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
 .calc-clases input, .asist-clases input { width: 72px; min-height: 36px; padding: 0 8px; border: 1px solid var(--linea-2); border-radius: var(--r-chico); font: inherit; }
 .asist-clases { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; color: var(--azul); }
 @media (max-width: 760px) { .leyenda dl div { grid-template-columns: 1fr; gap: 2px; } }
+
+.sin-guardar { display: block; margin-top: 4px; font-size: 0.8rem; font-weight: 700; color: #8a5a00; }
