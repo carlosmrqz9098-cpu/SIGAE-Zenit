@@ -158,16 +158,16 @@ export function SeccionMateriales({ idActividad, compacta }: { idActividad: numb
                 <span>{tamano(m.tamano_bytes)} · {fechaHora(m.fecha_carga)}{m.cargado_por ? ` · ${m.cargado_por}` : ""}</span>
               </div>
               {m.tipo_mime !== "application/vnd.openxmlformats-officedocument.wordprocessingml.document" && (
-                <button className="icono-btn ver" onClick={() => ver(m)} aria-label={`Ver ${m.nombre_original}`} title="Ver">
-                  <Icono nombre="ver" />
+                <button className="icono-btn con-texto ver" onClick={() => ver(m)} aria-label={`Ver ${m.nombre_original}`} title="Ver">
+                  <Icono nombre="ver" tam={18} /><span>Ver</span>
                 </button>
               )}
-              <button className="icono-btn editar" onClick={() => descargar(m)} aria-label={`Descargar ${m.nombre_original}`} title="Descargar">
-                <Icono nombre="descargar" />
+              <button className="icono-btn con-texto editar" onClick={() => descargar(m)} aria-label={`Descargar ${m.nombre_original}`} title="Descargar">
+                <Icono nombre="descargar" tam={18} /><span>Descargar</span>
               </button>
               {datos.puede_gestionar && (
-                <button className="icono-btn peligro" onClick={() => setBorrar(m)} aria-label={`Eliminar ${m.nombre_original}`} title="Eliminar">
-                  <Icono nombre="borrar" />
+                <button className="icono-btn con-texto peligro" onClick={() => setBorrar(m)} aria-label={`Eliminar ${m.nombre_original}`} title="Eliminar">
+                  <Icono nombre="borrar" tam={18} /><span>Eliminar</span>
                 </button>
               )}
             </li>

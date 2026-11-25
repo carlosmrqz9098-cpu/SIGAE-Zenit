@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { TiraDias } from "../components/Horario";
 import { Icono } from "../components/Icono";
-import { Boton, CajaError, Campo, Cargando, Confirmar, Encabezado, Insignia, Modal, Paginacion, useAvisos, usePaginas, Vacio } from "../components/ui";
+import { Boton, CajaError, Campo, Cargando, Confirmar, Encabezado, Insignia, Leyenda, Modal, Paginacion, useAvisos, usePaginas, Vacio } from "../components/ui";
 import { api, ApiError } from "../lib/api";
 import { hora } from "../lib/formato";
 import { Enlace } from "../lib/router";
@@ -124,6 +124,7 @@ export function Actividades() {
       <Encabezado titulo="Actividades" texto="Las actividades nuevas quedan en borrador y se publican solas cuando abre su periodo."
         acciones={<Boton icono="mas" onClick={() => abrir("nueva")}>Nueva actividad</Boton>} />
 
+      <Leyenda estados={["Borrador", "Activa", "Llena", "Cerrada", "Inactiva"]} />
       <div className="filtros">
         <label className="buscador">
           <Icono nombre="buscar" tam={18} />
@@ -157,10 +158,10 @@ export function Actividades() {
                   <td data-col="Estado"><Insignia valor={a.estado} /></td>
                   <td className="acciones-fila">
                     <Enlace a={`/grupos/${a.id_actividad}`} className="btn btn-fantasma btn-chico">Grupo</Enlace>
-                    {editable(a) && <button className="icono-btn editar" onClick={() => abrir(a)} aria-label={`Editar ${a.nombre}`} title="Editar"><Icono nombre="editar" /></button>}
-                    {editable(a) && <button className="icono-btn cuidado" onClick={() => setAccion({ tipo: "desactivar", a })} aria-label={`Desactivar ${a.nombre}`} title="Desactivar"><Icono nombre="bloquear" /></button>}
-                    {a.estado === "Inactiva" && <button className="icono-btn exito" onClick={() => setAccion({ tipo: "reactivar", a })} aria-label={`Reactivar ${a.nombre}`} title="Reactivar"><Icono nombre="recargar" /></button>}
-                    {a.inscritos === 0 && <button className="icono-btn peligro" onClick={() => setAccion({ tipo: "eliminar", a })} aria-label={`Eliminar ${a.nombre}`} title="Eliminar"><Icono nombre="borrar" /></button>}
+                    {editable(a) && <button className="icono-btn con-texto editar" onClick={() => abrir(a)} aria-label={`Editar ${a.nombre}`} title="Editar"><Icono nombre="editar" tam={18} /><span>Editar</span></button>}
+                    {editable(a) && <button className="icono-btn con-texto cuidado" onClick={() => setAccion({ tipo: "desactivar", a })} aria-label={`Desactivar ${a.nombre}`} title="Desactivar"><Icono nombre="bloquear" tam={18} /><span>Desactivar</span></button>}
+                    {a.estado === "Inactiva" && <button className="icono-btn con-texto exito" onClick={() => setAccion({ tipo: "reactivar", a })} aria-label={`Reactivar ${a.nombre}`} title="Reactivar"><Icono nombre="recargar" tam={18} /><span>Reactivar</span></button>}
+                    {a.inscritos === 0 && <button className="icono-btn con-texto peligro" onClick={() => setAccion({ tipo: "eliminar", a })} aria-label={`Eliminar ${a.nombre}`} title="Eliminar"><Icono nombre="borrar" tam={18} /><span>Eliminar</span></button>}
                   </td>
                 </tr>
               ))}

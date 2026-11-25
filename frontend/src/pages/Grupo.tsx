@@ -35,6 +35,8 @@ export function Grupo({ params }: { params: Record<string, string> }) {
   const [captura, setCaptura] = useState<Record<number, Captura>>({});
   const [errores, setErrores] = useState<Record<number, string>>({});
   const [guardando, setGuardando] = useState(false);
+  const [clases, setClases] = useState("");
+  const [asistio, setAsistio] = useState<Record<number, string>>({});
   const avisar = useAvisos();
 
   useEffect(() => {
@@ -58,6 +60,15 @@ export function Grupo({ params }: { params: Record<string, string> }) {
     return c.asistencia !== antes || c.evidencia !== !!a.evidencia_cumplida;
   });
 
+  const totalClases = Number(clases) > 0 ? Math.floor(Number(clases)) : 0;
+  /** El docente escribe cuántas clases vino el alumno y el sistema saca el porcentaje. */
+  function contarClases(id: number, v: string) {
+    setAsistio((x) => ({ ...x, [id]: v }));
+    const n = Number(v);
+    if (totalClases && v !== "" && Number.isFinite(n) && n >= 0) {
+      poner(id, { asistencia: String(Math.min(100, Math.round((Math.min(n, totalClases) / totalClases) * 100))) });
+    }
+  }
   const poner = (id: number, cambio: Partial<Captura>) =>
     setCaptura((x) => ({ ...x, [id]: { ...x[id], ...cambio } }));
   const todos = (cambio: Partial<Captura>) =>
@@ -142,6 +153,17 @@ export function Grupo({ params }: { params: Record<string, string> }) {
                 <span className="texto-suave">Después ajusta solo a quien le falte y da clic en Guardar.</span>
               </div>
             )}
+            {editables.length > 0 && (
+              <div className="calc-clases">
+                <label>
+                  <span>¿Cuántas clases has dado?</span>
+                  <input type="number" min={1} inputMode="numeric" value={clases} onChange={(e) => setClases(e.target.value)} placeholder="Ej. 20" />
+                </label>
+                <span className="texto-suave">
+                  {totalClases ? `Escribe cuántas vino cada alumno y el porcentaje se calcula solo (de ${totalClases} clases).` : "Opcional: si lo llenas, en cada alumno escribes cuántas clases vino y el % se calcula solo."}
+                </span>
+              </div>
+            )}
             {datos.lista.length === 0 ? (
               <Vacio titulo="Nadie se ha inscrito todavía" texto="Cuando los alumnos se inscriban, aparecerán aquí." />
             ) : (
@@ -174,6 +196,14 @@ export function Grupo({ params }: { params: Record<string, string> }) {
                                   onChange={(e) => poner(a.id_inscripcion, { asistencia: e.target.value })} />
                                 <span className="texto-suave">%</span>
                               </div>
+                              {!cancelada && c && totalClases > 0 && (
+                                <label className="asist-clases">
+                                  <span>Vino a</span>
+                                  <input type="number" min={0} max={totalClases} inputMode="numeric" value={asistio[a.id_inscripcion] ?? ""}
+                                    aria-label={`Clases a las que vino ${a.nombre}`} onChange={(e) => contarClases(a.id_inscripcion, e.target.value)} />
+                                  <span>de {totalClases}</span>
+                                </label>
+                              )}
                               {!cancelada && c && (
                                 <div className="asist-rapida" role="group" aria-label={`Asistencia rápida de ${a.nombre}`}>
                                   {["100", "90", "80", "70", "50", "0"].map((v) => (

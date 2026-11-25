@@ -87,8 +87,8 @@ export function Aulas() {
                   <td data-col="Actividades">{a.actividades}</td>
                   {esAdmin && (
                     <td className="acciones-fila">
-                      <button className="icono-btn editar" onClick={() => abrir(a)} aria-label={`Editar ${a.nombre}`} title="Editar"><Icono nombre="editar" /></button>
-                      {a.actividades === 0 && <button className="icono-btn peligro" onClick={() => setBorrar(a)} aria-label={`Eliminar ${a.nombre}`} title="Eliminar"><Icono nombre="borrar" /></button>}
+                      <button className="icono-btn con-texto editar" onClick={() => abrir(a)} aria-label={`Editar ${a.nombre}`} title="Editar"><Icono nombre="editar" tam={18} /><span>Editar</span></button>
+                      {a.actividades === 0 && <button className="icono-btn con-texto peligro" onClick={() => setBorrar(a)} aria-label={`Eliminar ${a.nombre}`} title="Eliminar"><Icono nombre="borrar" tam={18} /><span>Eliminar</span></button>}
                     </td>
                   )}
                 </tr>

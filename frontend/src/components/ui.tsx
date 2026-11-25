@@ -61,9 +61,40 @@ const TONO: Record<string, string> = {
   Cancelada: "rojo", Inactiva: "rojo", "No acreditado": "rojo", Fallida: "rojo",
 };
 
+/** Qué significa cada estado, en palabras sencillas. */
+export const SIGNIFICA: Record<string, string> = {
+  Borrador: "Ya está creada, pero todavía no se publica: aparece sola cuando abre su periodo.",
+  Activa: "Publicada y abierta para inscribirse.",
+  Llena: "Ya no tiene lugares libres.",
+  Cerrada: "La actividad ya terminó y se calcularon los créditos.",
+  Inactiva: "Se desactivó a mano; no aparece en el catálogo.",
+  Programado: "El periodo todavía no empieza.",
+  Activo: "El periodo está abierto: los alumnos se pueden inscribir.",
+  Cerrado: "El periodo ya terminó.",
+  Evaluada: "La actividad cerró y el crédito ya quedó definido.",
+  Cancelada: "El alumno se dio de baja.",
+};
+
 export function Insignia({ valor }: { valor: string | null | undefined }) {
   const v = valor ?? "Pendiente";
-  return <span className={`insignia insignia-${TONO[v] ?? "gris"}`}>{v}</span>;
+  return <span className={`insignia insignia-${TONO[v] ?? "gris"}`} title={SIGNIFICA[v]}>{v}</span>;
+}
+
+/** "¿Qué significa cada estado?" plegable, para quien usa el sistema por primera vez. */
+export function Leyenda({ titulo = "¿Qué significa cada estado?", estados, extra }: {
+  titulo?: string; estados?: string[]; extra?: [string, string][];
+}) {
+  const filas: [string, string][] = [...(estados ?? []).map((e) => [e, SIGNIFICA[e]] as [string, string]), ...(extra ?? [])];
+  return (
+    <details className="leyenda">
+      <summary><Icono nombre="alerta" tam={16} /> {titulo}</summary>
+      <dl>
+        {filas.map(([k, v]) => (
+          <div key={k}><dt>{estados?.includes(k) ? <Insignia valor={k} /> : <strong>{k}</strong>}</dt><dd>{v}</dd></div>
+        ))}
+      </dl>
+    </details>
+  );
 }
 
 // ------------------------------------------------------------------ Estado del crédito (grande y claro)

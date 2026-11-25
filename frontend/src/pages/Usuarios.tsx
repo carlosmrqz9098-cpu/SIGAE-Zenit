@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Icono } from "../components/Icono";
-import { Boton, CajaError, Campo, Cargando, Encabezado, Insignia, Modal, Paginacion, useAvisos, usePaginas, Vacio } from "../components/ui";
+import { Boton, CajaError, Campo, Cargando, Encabezado, Insignia, Leyenda, Modal, Paginacion, useAvisos, usePaginas, Vacio } from "../components/ui";
 import { api, ApiError } from "../lib/api";
 import { fecha } from "../lib/formato";
 import { useSesion } from "../lib/sesion";
@@ -9,6 +9,15 @@ import { useCarga } from "../lib/useCarga";
 
 interface U { id_usuario: number; nombre: string; correo: string; rol: Rol; matricula: string | null; activo: boolean; creado_en: string }
 const ROLES: Rol[] = ["Alumno", "Docente", "Personal", "Administrador"];
+const NOMBRE_ROL: Record<Rol, string> = {
+  Alumno: "Alumno", Docente: "Docente", Personal: "Personal de Extra-Escolares", Administrador: "Administrador",
+};
+const QUE_HACE: [string, string][] = [
+  ["Alumno", "Se inscribe a actividades y ve su asistencia, su crédito y los materiales."],
+  ["Docente", "Ve la lista de sus grupos, captura asistencia y evidencia y sube materiales."],
+  ["Personal de Extra-Escolares", "Personal de la oficina: crea y edita actividades y consulta usuarios."],
+  ["Administrador", "Puede todo: periodos, aulas, usuarios, parámetros y bitácora."],
+];
 
 export function Usuarios() {
   const { usuario } = useSesion();
@@ -84,6 +93,7 @@ export function Usuarios() {
     <>
       <Encabezado titulo="Usuarios" texto={esAdmin ? "Registra cuentas, asigna roles y desactiva accesos." : "Consulta de las personas registradas."}
         acciones={esAdmin && <Boton icono="mas" onClick={() => abrir("nuevo")}>Nuevo usuario</Boton>} />
+      <Leyenda titulo="¿Qué puede hacer cada rol?" extra={QUE_HACE} />
       <div className="filtros">
         <label className="buscador">
           <Icono nombre="buscar" tam={18} />
@@ -91,7 +101,7 @@ export function Usuarios() {
         </label>
         <select value={rol} onChange={(e) => setRol(e.target.value)} aria-label="Filtrar por rol">
           <option value="">Todos los roles</option>
-          {ROLES.map((r) => <option key={r}>{r}</option>)}
+          {ROLES.map((r) => <option key={r} value={r}>{NOMBRE_ROL[r]}</option>)}
         </select>
       </div>
       {cargando && !datos && <Cargando />}
@@ -105,14 +115,14 @@ export function Usuarios() {
               {pag.visibles.map((u) => (
                 <tr key={u.id_usuario} className={u.activo ? "" : "apagada"}>
                   <td data-col="Nombre"><strong>{u.nombre}</strong><span className="texto-suave">{u.correo}</span></td>
-                  <td data-col="Rol">{u.rol}</td>
+                  <td data-col="Rol">{NOMBRE_ROL[u.rol] ?? u.rol}</td>
                   <td data-col="Matrícula">{u.matricula ?? "—"}</td>
                   <td data-col="Alta">{fecha(u.creado_en)}</td>
                   <td data-col="Acceso"><span className={`insignia insignia-${u.activo ? "verde" : "rojo"}`}>{u.activo ? "Activo" : "Desactivado"}</span></td>
                   {esAdmin && (
                     <td className="acciones-fila">
-                      <button className="icono-btn editar" onClick={() => abrir(u)} aria-label={`Editar ${u.nombre}`} title="Editar"><Icono nombre="editar" /></button>
-                      <button className="icono-btn cuidado" onClick={() => { setErrorForm(null); setNuevaClave(""); setClave(u); }} aria-label={`Nueva contraseña para ${u.nombre}`} title="Asignar contraseña"><Icono nombre="bloquear" /></button>
+                      <button className="icono-btn con-texto editar" onClick={() => abrir(u)} aria-label={`Editar ${u.nombre}`} title="Editar"><Icono nombre="editar" tam={18} /><span>Editar</span></button>
+                      <button className="icono-btn con-texto cuidado" onClick={() => { setErrorForm(null); setNuevaClave(""); setClave(u); }} aria-label={`Nueva contraseña para ${u.nombre}`} title="Asignar contraseña"><Icono nombre="bloquear" tam={18} /><span>Contraseña</span></button>
                     </td>
                   )}
                 </tr>
@@ -133,7 +143,7 @@ export function Usuarios() {
           </Campo>
           <div className="rejilla-2">
             <Campo etiqueta="Rol *" ayuda={propio ? "No puedes cambiar tu propio rol." : undefined}>
-              <select value={form.rol} disabled={propio} onChange={(e) => setForm({ ...form, rol: e.target.value as Rol })}>{ROLES.map((r) => <option key={r}>{r}</option>)}</select>
+              <select value={form.rol} disabled={propio} onChange={(e) => setForm({ ...form, rol: e.target.value as Rol })}>{ROLES.map((r) => <option key={r} value={r}>{NOMBRE_ROL[r]}</option>)}</select>
             </Campo>
             {form.rol === "Alumno" && <Campo etiqueta="Matrícula *"><input value={form.matricula} onChange={(e) => setForm({ ...form, matricula: e.target.value })} maxLength={20} /></Campo>}
           </div>
