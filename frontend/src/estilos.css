@@ -261,6 +261,13 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
 .tabla td > .texto-suave { display: block; }
 .tabla tr.apagada { opacity: 0.55; }
 .tabla tr.detalle td { background: #f8fafb; }
+
+/* Títulos de columna que ordenan la tabla (clic: A→Z, otro clic: Z→A) */
+.th-orden { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; }
+.th-orden:hover { color: var(--tinta); }
+.th-orden:focus-visible { outline: 2px solid var(--verde); outline-offset: 3px; border-radius: 4px; }
+.th-flecha { font-size: 0.8rem; opacity: 0.4; }
+.tabla th[aria-sort="ascending"] .th-flecha, .tabla th[aria-sort="descending"] .th-flecha { opacity: 1; color: var(--verde); }
 .acciones-fila { text-align: right; white-space: nowrap; }
 .acciones-fila > * { display: inline-flex; vertical-align: middle; }
 .num-fuerte { font-family: var(--f-titulo); font-weight: 700; font-size: 1.05rem; }

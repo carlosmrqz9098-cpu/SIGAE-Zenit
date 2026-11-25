@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Icono } from "../components/Icono";
-import { Boton, CajaError, Campo, Cargando, Encabezado, Insignia, Modal, useAvisos, Vacio } from "../components/ui";
+import { ThOrdenable, useOrden } from "../components/Orden";
+import { Boton, CajaError, Campo, Cargando, Encabezado, Modal, useAvisos, Vacio } from "../components/ui";
 import { api, ApiError } from "../lib/api";
 import { fecha } from "../lib/formato";
 import { useSesion } from "../lib/sesion";
@@ -9,6 +10,9 @@ import { useCarga } from "../lib/useCarga";
 
 interface U { id_usuario: number; nombre: string; correo: string; rol: Rol; matricula: string | null; activo: boolean; creado_en: string }
 const ROLES: Rol[] = ["Alumno", "Docente", "Personal", "Administrador"];
+// Columnas que se pueden ordenar con clic en su título
+type ColUsuario = "nombre" | "rol" | "acceso";
+const valorUsuario = (u: U, c: ColUsuario) => (c === "nombre" ? u.nombre : c === "rol" ? u.rol : u.activo ? "Activo" : "Desactivado");
 
 export function Usuarios() {
   const { usuario } = useSesion();
@@ -26,6 +30,7 @@ export function Usuarios() {
 
   const lista = useMemo(() => (datos ?? []).filter((u) =>
     (!rol || u.rol === rol) && (!filtro || `${u.nombre} ${u.correo} ${u.matricula ?? ""}`.toLowerCase().includes(filtro.toLowerCase()))), [datos, filtro, rol]);
+    const { ordenada, orden, alternar } = useOrden(lista, valorUsuario);
 
   function abrir(u: U | "nuevo") {
     setErrorForm(null);
@@ -99,9 +104,18 @@ export function Usuarios() {
       {lista.length > 0 && (
         <div className="tabla-envoltura">
           <table className="tabla">
-            <thead><tr><th scope="col">Nombre</th><th scope="col">Rol</th><th scope="col">Matrícula</th><th scope="col">Alta</th><th scope="col">Acceso</th>{esAdmin && <th scope="col"><span className="sr">Acciones</span></th>}</tr></thead>
+                        <thead>
+              <tr>
+                <ThOrdenable columna="nombre" orden={orden} alternar={alternar}>Nombre</ThOrdenable>
+                <ThOrdenable columna="rol" orden={orden} alternar={alternar}>Rol</ThOrdenable>
+                <th scope="col">Matrícula</th>
+                <th scope="col">Alta</th>
+                <ThOrdenable columna="acceso" orden={orden} alternar={alternar}>Acceso</ThOrdenable>
+                {esAdmin && <th scope="col"><span className="sr">Acciones</span></th>}
+              </tr>
+            </thead>
             <tbody>
-              {lista.map((u) => (
+                            {ordenada.map((u) => (
                 <tr key={u.id_usuario} className={u.activo ? "" : "apagada"}>
                   <td data-col="Nombre"><strong>{u.nombre}</strong><span className="texto-suave">{u.correo}</span></td>
                   <td data-col="Rol">{u.rol}</td>
