@@ -112,7 +112,7 @@ export function Usuarios() {
                   {esAdmin && (
                     <td className="acciones-fila">
                       <button className="icono-btn editar" onClick={() => abrir(u)} aria-label={`Editar ${u.nombre}`} title="Editar"><Icono nombre="editar" /></button>
-                      <button className="icono-btn aviso" onClick={() => { setErrorForm(null); setNuevaClave(""); setClave(u); }} aria-label={`Nueva contraseña para ${u.nombre}`} title="Asignar contraseña"><Icono nombre="bloquear" /></button>
+                      <button className="icono-btn cuidado" onClick={() => { setErrorForm(null); setNuevaClave(""); setClave(u); }} aria-label={`Nueva contraseña para ${u.nombre}`} title="Asignar contraseña"><Icono nombre="bloquear" /></button>
                     </td>
                   )}
                 </tr>

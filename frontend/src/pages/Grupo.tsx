@@ -63,7 +63,7 @@ export function Grupo({ params }: { params: Record<string, string> }) {
   const todos = (cambio: Partial<Captura>) =>
     setCaptura((x) => {
       const n = { ...x };
-      editables.forEach((a) => { if (n[a.id_inscripcion]) n[a.id_inscripcion] = { ...n[a.id_inscripcion], ...cambio }; });
+      editables.filter((a) => a.estado_inscripcion === "Activa").forEach((a) => { if (n[a.id_inscripcion]) n[a.id_inscripcion] = { ...n[a.id_inscripcion], ...cambio }; });
       return n;
     });
 

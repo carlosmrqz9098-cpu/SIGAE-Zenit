@@ -139,8 +139,8 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
 .icono-btn.editar:hover { background: var(--azul); color: var(--blanco); }
 .icono-btn.peligro { color: var(--rojo); border-color: #efc2bb; background: var(--rojo-claro); }
 .icono-btn.peligro:hover { background: var(--rojo); color: var(--blanco); }
-.icono-btn.aviso { color: #8a5a00; border-color: #f2d698; background: var(--amarillo-claro); }
-.icono-btn.aviso:hover { background: var(--amarillo); color: var(--tinta); }
+.icono-btn.cuidado { color: #8a5a00; border-color: #f2d698; background: var(--amarillo-claro); }
+.icono-btn.cuidado:hover { background: var(--amarillo); color: var(--tinta); }
 .icono-btn.exito { color: var(--verde-2); border-color: #a9d8c0; background: var(--verde-claro); }
 .icono-btn.exito:hover { background: var(--verde); color: var(--blanco); }
 .icono-btn.ver { color: var(--azul); border-color: #b9cde3; background: var(--blanco); }
@@ -277,6 +277,7 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
 .tabla tr.detalle td { background: #f8fafb; }
 .acciones-fila { text-align: right; white-space: nowrap; }
 .acciones-fila > * { display: inline-flex; vertical-align: middle; }
+.acciones-fila > * + * { margin-left: 6px; }
 .num-fuerte { font-family: var(--f-titulo); font-weight: 700; font-size: 1.05rem; }
 .cupo-celda { white-space: nowrap; color: var(--tinta-3); }
 .ocupacion .insignia, .lista-filas .insignia { justify-self: start; }
@@ -447,9 +448,11 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
 
 /* ------------------------------------------------------------- ajustes de la exposición */
 .tabla-bitacora { table-layout: auto; }
-.tabla-bitacora td { white-space: normal; word-break: break-word; }
-.tabla-bitacora td:first-child { white-space: nowrap; }
-.tabla-bitacora .cambios dd { min-width: 0; }
+.tabla-bitacora td { white-space: normal; }
+.tabla-bitacora td:first-child, .tabla-bitacora td[data-col="Qué pasó"] { white-space: nowrap; }
+.tabla-bitacora td.acciones-fila { width: 1%; }
+.tabla-bitacora tr.detalle td { white-space: normal; }
+.tabla-bitacora .cambios dd { min-width: 0; word-break: break-word; }
 .campo-error input, .campo-error select, .campo-error textarea { border-color: var(--rojo); background: var(--rojo-claro); }
 .campo-error .campo-etiqueta { color: var(--rojo); }
 .regresar { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 12px; padding: 6px 12px; border-radius: var(--r); border: 1px solid var(--linea-2); background: var(--blanco); color: var(--tinta-2); font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; }
