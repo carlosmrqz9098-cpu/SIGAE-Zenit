@@ -57,9 +57,9 @@ img, svg { display: block; }
 .saltar:focus { left: 8px; }
 
 /* ------------------------------------------------------------- marco */
-.marco { min-height: 100vh; display: grid; grid-template-columns: var(--ancho-lateral) 1fr; }
+.marco { min-height: 100vh; min-height: 100dvh; display: grid; grid-template-columns: var(--ancho-lateral) 1fr; }
 .lateral {
-  position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh; height: 100dvh; display: flex; flex-direction: column;
   background: var(--pizarra); color: #dce3ea; padding: 20px 14px;
 }
 .marca { display: flex; align-items: center; gap: 12px; padding: 4px 8px 22px; }
@@ -350,7 +350,7 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
 .dia-chip input:focus-visible + span { outline: 3px solid var(--amarillo); outline-offset: 2px; }
 
 /* ------------------------------------------------------------- modal */
-.modal { border: 0; padding: 0; border-radius: var(--r-grande); width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 32px); box-shadow: 0 30px 60px -20px rgba(24, 33, 44, 0.45); color: var(--tinta); }
+.modal { border: 0; padding: 0; border-radius: var(--r-grande); width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); box-shadow: 0 30px 60px -20px rgba(24, 33, 44, 0.45); color: var(--tinta); }
 .modal-amplio { width: min(760px, calc(100vw - 24px)); }
 .modal::backdrop { background: rgba(20, 28, 38, 0.55); }
 .modal[open] { display: flex; flex-direction: column; }
@@ -369,7 +369,7 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
 @keyframes entra { from { transform: translateY(8px); opacity: 0; } }
 
 /* ------------------------------------------------------------- login */
-.login { min-height: 100vh; display: grid; grid-template-columns: 1.1fr 1fr; }
+.login { min-height: 100vh; min-height: 100dvh; display: grid; grid-template-columns: 1.1fr 1fr; }
 .login-arte { background: var(--pizarra); display: grid; place-items: center; padding: 48px; position: relative; overflow: hidden; }
 .login-arte::after {
   content: ""; position: absolute; inset: auto -10% -30% -10%; height: 60%;
