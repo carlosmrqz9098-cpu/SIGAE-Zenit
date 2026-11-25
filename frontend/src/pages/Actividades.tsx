@@ -158,7 +158,7 @@ export function Actividades() {
                   <td className="acciones-fila">
                     <Enlace a={`/grupos/${a.id_actividad}`} className="btn btn-fantasma btn-chico">Grupo</Enlace>
                     {editable(a) && <button className="icono-btn editar" onClick={() => abrir(a)} aria-label={`Editar ${a.nombre}`} title="Editar"><Icono nombre="editar" /></button>}
-                    {editable(a) && <button className="icono-btn aviso" onClick={() => setAccion({ tipo: "desactivar", a })} aria-label={`Desactivar ${a.nombre}`} title="Desactivar"><Icono nombre="bloquear" /></button>}
+                    {editable(a) && <button className="icono-btn cuidado" onClick={() => setAccion({ tipo: "desactivar", a })} aria-label={`Desactivar ${a.nombre}`} title="Desactivar"><Icono nombre="bloquear" /></button>}
                     {a.estado === "Inactiva" && <button className="icono-btn exito" onClick={() => setAccion({ tipo: "reactivar", a })} aria-label={`Reactivar ${a.nombre}`} title="Reactivar"><Icono nombre="recargar" /></button>}
                     {a.inscritos === 0 && <button className="icono-btn peligro" onClick={() => setAccion({ tipo: "eliminar", a })} aria-label={`Eliminar ${a.nombre}`} title="Eliminar"><Icono nombre="borrar" /></button>}
                   </td>
@@ -201,7 +201,7 @@ export function Actividades() {
         </form>
       </Modal>
 
-      <Confirmar abierto={!!accion} peligro cargando={procesando} alCerrar={() => setAccion(null)} alConfirmar={ejecutar}
+      <Confirmar abierto={!!accion} peligro={accion?.tipo !== "reactivar"} cargando={procesando} alCerrar={() => setAccion(null)} alConfirmar={ejecutar}
         titulo={accion?.tipo === "eliminar" ? "Eliminar actividad" : accion?.tipo === "reactivar" ? "Reactivar actividad" : "Desactivar actividad"}
         accion={accion?.tipo === "eliminar" ? "Sí, eliminar" : accion?.tipo === "reactivar" ? "Sí, reactivar" : "Sí, desactivar"}
         texto={accion && (accion.tipo === "eliminar"
