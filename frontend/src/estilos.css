@@ -11,7 +11,7 @@
   --blanco: #ffffff;
   --tinta: #18212c;
   --tinta-2: #4a5868;
-  --tinta-3: #6c7a8a;
+  --tinta-3: #4f5f73;
   --linea: #dfe4ea;
   --linea-2: #c9d1da;
   --verde: #1e7f55;
@@ -173,14 +173,14 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
 .insignia-amarillo { background: var(--amarillo-claro); color: #7a5300; }
 .insignia-rojo { background: var(--rojo-claro); color: var(--rojo); }
 .insignia-azul { background: var(--azul-claro); color: var(--azul); }
-.insignia-gris { background: #eceff3; color: var(--tinta-2); }
+.insignia-gris { background: #e6ecf7; color: #2f4a73; }
 
 /* ------------------------------------------------------------- tira de días (lo memorable) */
 .tira { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.tira-dias { flex: none; display: flex; gap: 3px; list-style: none; margin: 0; padding: 3px; background: #eef1f4; border: 1px solid var(--linea-2); border-radius: 8px; }
+.tira-dias { flex: none; display: flex; gap: 3px; list-style: none; margin: 0; padding: 3px; background: var(--azul-claro); border: 1px solid #b9cde3; border-radius: 8px; }
 .tira-dias li {
   width: 24px; height: 24px; display: grid; place-items: center; border-radius: 5px;
-  flex: none; font-family: var(--f-titulo); font-weight: 700; font-size: 0.78rem; color: #9aa6b3;
+  flex: none; font-family: var(--f-titulo); font-weight: 700; font-size: 0.78rem; color: var(--azul); background: var(--blanco);
 }
 .tira-dias li.on { background: var(--verde); color: var(--blanco); box-shadow: 0 1px 2px rgba(0,0,0,.2); }
 .tira-hora { font-family: var(--f-titulo); font-weight: 700; font-size: 0.98rem; font-variant-numeric: tabular-nums; }
@@ -344,8 +344,9 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
 .dias-elegir { display: flex; gap: 8px; flex-wrap: wrap; }
 .dia-chip { position: relative; cursor: pointer; }
 .dia-chip input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
-.dia-chip span { display: grid; place-items: center; min-width: 54px; height: 40px; padding: 0 10px; border-radius: var(--r); border: 1px solid var(--linea-2); background: var(--blanco); font-weight: 700; }
-.dia-chip.on span { background: var(--pizarra); border-color: var(--pizarra); color: var(--amarillo); }
+.dia-chip span { display: grid; place-items: center; min-width: 54px; height: 40px; padding: 0 10px; border-radius: var(--r); border: 1px solid #b9cde3; background: var(--blanco); color: var(--azul); font-weight: 700; }
+.dia-chip:hover span { background: var(--azul-claro); }
+.dia-chip.on span { background: var(--verde); border-color: var(--verde); color: var(--blanco); }
 .dia-chip input:focus-visible + span { outline: 3px solid var(--amarillo); outline-offset: 2px; }
 
 /* ------------------------------------------------------------- modal */
@@ -377,8 +378,8 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
 .login-pizarron { position: relative; z-index: 1; color: var(--blanco); max-width: 440px; display: grid; gap: 28px; }
 .login-sello { font-size: 0.9rem; color: #a9b8c8; }
 .login-lema { font-family: var(--f-titulo); font-size: clamp(2.2rem, 4vw, 3.4rem); font-weight: 800; line-height: 1.02; letter-spacing: -0.02em; }
-.login-semana { display: flex; gap: 6px; list-style: none; margin: 0; padding: 6px; background: var(--pizarra-2); border-radius: 12px; width: max-content; }
-.login-semana li { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 9px; font-family: var(--f-titulo); font-weight: 800; font-size: 1.15rem; color: #6f8296; }
+.login-semana { display: flex; gap: 6px; list-style: none; margin: 0; padding: 6px; background: #2a3f58; border: 1px solid #3f5d80; border-radius: 12px; width: max-content; }
+.login-semana li { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 9px; font-family: var(--f-titulo); font-weight: 800; font-size: 1.15rem; color: #d6e6f7; background: #33506f; }
 .login-semana li.on { background: var(--amarillo); color: var(--pizarra); }
 .login-detalle { color: #c4cfda; font-size: 1.1rem; max-width: 34ch; }
 .login-panel { display: grid; place-items: center; padding: 32px 20px; }
@@ -468,3 +469,26 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
 .subida-cola li { display: flex; gap: 8px; align-items: center; }
 .subida-cola .ok { color: var(--verde-2); font-weight: 700; }
 .subida-cola .mal { color: var(--rojo); font-weight: 700; }
+
+/* ------------------------------------------------------------- estado del crédito */
+:root { --morado: #6a3fa0; --morado-claro: #f1eafb; }
+.insignia-morado { background: var(--morado-claro); color: var(--morado); }
+.estado-credito { display: inline-flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--r); border: 2px solid; text-align: left; }
+.estado-credito .ec-icono { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; color: var(--blanco); flex: none; }
+.estado-credito .ec-texto { display: grid; gap: 1px; }
+.estado-credito strong { font-family: var(--f-titulo); font-size: 1.15rem; line-height: 1.1; }
+.estado-credito small { font-size: 0.85rem; font-weight: 700; }
+.estado-credito.chico { padding: 6px 10px; gap: 8px; border-width: 1.5px; }
+.estado-credito.chico .ec-icono { width: 26px; height: 26px; }
+.estado-credito.chico strong { font-size: 0.98rem; }
+.estado-credito.chico small { font-size: 0.78rem; }
+.ec-verde { background: var(--verde-claro); border-color: #8fd0b0; color: var(--verde-2); }
+.ec-verde .ec-icono { background: var(--verde); }
+.ec-rojo { background: var(--rojo-claro); border-color: #eeb1a8; color: #9c2f21; }
+.ec-rojo .ec-icono { background: var(--rojo); }
+.ec-amarillo { background: var(--amarillo-claro); border-color: #f0cf7e; color: #7a5300; }
+.ec-amarillo .ec-icono { background: #d99a12; }
+.ec-morado { background: var(--morado-claro); border-color: #cdb6ec; color: var(--morado); }
+.ec-morado .ec-icono { background: var(--morado); }
+.credito > span { font-size: 0.85rem; font-weight: 700; color: var(--tinta-2); }
+.lista-filas .estado-credito { justify-self: start; }

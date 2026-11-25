@@ -1,5 +1,5 @@
 import { TiraDias } from "../components/Horario";
-import { CajaError, Cargando, Encabezado, Insignia } from "../components/ui";
+import { CajaError, Cargando, Encabezado, EstadoCredito, Insignia } from "../components/ui";
 import { fecha } from "../lib/formato";
 import { Enlace } from "../lib/router";
 import { useSesion } from "../lib/sesion";
@@ -82,7 +82,7 @@ export function Inicio() {
                           <span>{i.aula}</span>
                         </div>
                         <TiraDias dias={i.dias} inicio={i.hora_inicio} fin={i.hora_fin} />
-                        <Insignia valor={i.estatus_credito} />
+                        <EstadoCredito para="alumno" chico valor={i.estatus_credito} />
                       </li>
                     ))}
                   </ul>
