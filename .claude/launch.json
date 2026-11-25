@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "backend",
+      "runtimeExecutable": "C:\\Users\\angel\\Documents\\GitHub\\SIGAE-Zenit\\backend\\.venv\\Scripts\\python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--reload", "--app-dir", "C:\\Users\\angel\\Documents\\GitHub\\SIGAE-Zenit\\backend"],
+      "cwd": "C:\\Users\\angel\\Documents\\GitHub\\SIGAE-Zenit\\backend",
+      "port": 8000
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "C:\\Users\\angel\\Documents\\GitHub\\SIGAE-Zenit\\frontend"],
+      "cwd": "C:\\Users\\angel\\Documents\\GitHub\\SIGAE-Zenit\\frontend",
+      "port": 5173
+    }
+  ]
+}
