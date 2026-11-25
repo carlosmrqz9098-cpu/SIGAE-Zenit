@@ -99,7 +99,7 @@ export function MisInscripciones() {
                   <Icono nombre="materiales" tam={18} /><span>Materiales</span>
                 </Enlace>
                 {i.puede_darse_de_baja && (
-                  <Boton variante="fantasma" onClick={() => setBaja(i)}>Darme de baja</Boton>
+                  <Boton variante="fantasma" className="btn-baja" icono="cerrar" onClick={() => setBaja(i)}>Darme de baja</Boton>
                 )}
               </div>
             )}
