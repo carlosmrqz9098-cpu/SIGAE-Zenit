@@ -28,6 +28,9 @@ const RUTAS: Record<string, string> = {
   alerta: "M12 3l10 18H2zM12 10v5M12 18v.01",
   materiales: "M4 5a2 2 0 0 1 2-2h5l2 3h7a1 1 0 0 1 1 1v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z",
   bloquear: "M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4",
+  recargar: "M4 12a8 8 0 0 1 14-5.3M20 4v5h-5M20 12a8 8 0 0 1-14 5.3M4 20v-5h5",
+  ver: "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  atras: "M15 18l-6-6 6-6",
 };
 
 export function Icono({ nombre, tam = 20, className }: { nombre: string; tam?: number; className?: string }) {

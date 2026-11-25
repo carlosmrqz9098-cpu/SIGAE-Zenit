@@ -10,7 +10,7 @@ function iniciales(nombre: string) {
 
 export function Marco({ children }: { children: ReactNode }) {
   const { usuario, salir } = useSesion();
-  const { ruta } = useRuta();
+  const { ruta, ir } = useRuta();
   const [abierto, setAbierto] = useState(false);
   if (!usuario) return null;
   const items = MENU.filter((m) => puedeVer(m, usuario));
@@ -64,7 +64,14 @@ export function Marco({ children }: { children: ReactNode }) {
           <strong>SIGAE</strong>
           <span className="avatar chico" aria-hidden>{iniciales(usuario.nombre)}</span>
         </div>
-        <main id="contenido" tabIndex={-1}>{children}</main>
+        <main id="contenido" tabIndex={-1}>
+          {ruta !== "/" && !ruta.startsWith("/grupos/") && (
+            <button type="button" className="regresar" onClick={() => (window.history.length > 1 ? window.history.back() : ir("/"))}>
+              <Icono nombre="atras" tam={16} /> Regresar
+            </button>
+          )}
+          {children}
+        </main>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { Fragment, useState } from "react";
-import { Boton, CajaError, Cargando, Encabezado, Vacio } from "../components/ui";
+import { CajaError, Cargando, Encabezado, Paginacion, Vacio } from "../components/ui";
 import { fechaHora } from "../lib/formato";
 import { useCarga } from "../lib/useCarga";
 
@@ -42,7 +42,7 @@ export function Bitacora() {
       {datos && datos.registros.length === 0 && <Vacio titulo="Sin registros" />}
       {datos && datos.registros.length > 0 && (
         <div className="tabla-envoltura" aria-busy={cargando}>
-          <table className="tabla">
+          <table className="tabla tabla-bitacora">
             <thead><tr><th scope="col">Fecha</th><th scope="col">Quién</th><th scope="col">Qué pasó</th><th scope="col"><span className="sr">Detalle</span></th></tr></thead>
             <tbody>
               {datos.registros.map((r) => {
@@ -80,12 +80,8 @@ export function Bitacora() {
           </table>
         </div>
       )}
-      {datos && paginas > 1 && (
-        <nav className="paginacion" aria-label="Páginas">
-          <Boton variante="secundario" disabled={pagina <= 1} onClick={() => setPagina(pagina - 1)}>Anterior</Boton>
-          <span>Página {pagina} de {paginas}</span>
-          <Boton variante="secundario" disabled={pagina >= paginas} onClick={() => setPagina(pagina + 1)}>Siguiente</Boton>
-        </nav>
+      {datos && datos.total > 0 && (
+        <Paginacion pagina={pagina} paginas={paginas} total={datos.total} porPagina={datos.por_pagina} setPagina={setPagina} />
       )}
     </>
   );

@@ -100,12 +100,14 @@ def info_archivo(ruta: str) -> dict | None:
     return r.json() if r.status_code == 200 else None
 
 
-def url_descarga_firmada(ruta: str, nombre: str, segundos: int = 300) -> str:
+def url_descarga_firmada(ruta: str, nombre: str, segundos: int = 300, descargar: bool = True) -> str:
     r = _llamar("POST", f"/storage/v1/object/sign/{_bucket()}/{ruta}", headers=_secreta(),
                 json={"expiresIn": segundos})
     if r.status_code != 200:
         raise ErrorSIGAE(404, "El archivo ya no está disponible", "STORAGE_NO_ENCONTRADO")
     firmado = r.json().get("signedURL") or r.json().get("signedUrl")
+    if not descargar:  # para verlo en el navegador (PDF e imágenes)
+        return f"{get_settings().url}/storage/v1{firmado}"
     separador = "&" if "?" in firmado else "?"
     return f"{get_settings().url}/storage/v1{firmado}{separador}download={quote(nombre)}"
 

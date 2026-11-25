@@ -169,6 +169,15 @@ def desactivar_actividad(id_actividad: int, u: UsuarioActual = Depends(admin_o_p
         ).fetchone(), "La actividad")
 
 
+@router.post("/actividades/{id_actividad}/reactivar", summary="Reactivar una actividad desactivada")
+def reactivar_actividad(id_actividad: int, u: UsuarioActual = Depends(admin_o_personal)):
+    # Vuelve a Activa (periodo activo) o Borrador (periodo programado); la base revisa todo.
+    with conexion_usuario(u.id_auth) as conn:
+        return _uno_o_404(conn.execute(
+            "select id_actividad, estado::text as estado from sigae.reactivar_actividad(%s)", (id_actividad,)
+        ).fetchone(), "La actividad")
+
+
 @router.delete("/actividades/{id_actividad}", status_code=204, summary="Eliminar actividad sin inscripciones")
 def borrar_actividad(id_actividad: int, u: UsuarioActual = Depends(admin_o_personal)):
     with conexion_usuario(u.id_auth) as conn:

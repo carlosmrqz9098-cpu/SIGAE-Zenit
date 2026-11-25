@@ -104,7 +104,7 @@ def confirmar_subida(id_actividad: int, body: ConfirmarSubida, usuario: UsuarioA
 
 
 @router.get("/materiales/{id_material}/descarga", summary="URL temporal para descargar un material")
-def descargar(id_material: int, usuario: UsuarioActual = Depends(get_usuario_actual)):
+def descargar(id_material: int, ver: bool = False, usuario: UsuarioActual = Depends(get_usuario_actual)):
     with conexion_usuario(usuario.id_auth) as conn:
         # RLS: solo regresa la fila si el usuario puede verla
         fila = conn.execute(
@@ -112,7 +112,7 @@ def descargar(id_material: int, usuario: UsuarioActual = Depends(get_usuario_act
         ).fetchone()
     if fila is None:
         raise ErrorSIGAE(404, "El material no existe o no tienes acceso a él", "SGN04")
-    return {"url": supabase.url_descarga_firmada(fila["ruta_archivo"], fila["nombre_original"])}
+    return {"url": supabase.url_descarga_firmada(fila["ruta_archivo"], fila["nombre_original"], descargar=not ver)}
 
 
 @router.delete("/materiales/{id_material}", status_code=204, summary="Eliminar un material")
