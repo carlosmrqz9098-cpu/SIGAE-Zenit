@@ -11,7 +11,8 @@ export function Enrutador({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("popstate", f);
   }, []);
   const ir = (r: string) => {
-    if (r !== window.location.pathname) window.history.pushState({}, "", r);
+    // Se cuenta cuántas pantallas lleva dentro de SIGAE para que "Regresar" no lo saque del sistema
+    if (r !== window.location.pathname) window.history.pushState({ sigae: ((window.history.state?.sigae as number) ?? 0) + 1 }, "", r);
     setRuta(r);
     window.scrollTo(0, 0);
   };

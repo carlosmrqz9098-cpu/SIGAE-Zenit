@@ -497,15 +497,11 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
 .icono-btn.con-texto { width: auto; height: 34px; padding: 0 10px; gap: 6px; display: inline-flex; align-items: center; font: inherit; font-size: 0.84rem; font-weight: 700; margin: 2px 0; }
 .acciones-fila > * + * { margin-left: 6px; }
 .archivos .icono-btn.con-texto + .icono-btn.con-texto { margin-left: 6px; }
-.leyenda { margin: -6px 0 16px; background: var(--blanco); border: 1px solid #b9cde3; border-radius: var(--r); padding: 8px 14px; }
-.leyenda summary { cursor: pointer; font-weight: 700; color: var(--azul); display: flex; align-items: center; gap: 6px; }
-.leyenda dl { margin: 10px 0 4px; display: grid; gap: 8px; }
-.leyenda dl div { display: grid; grid-template-columns: minmax(110px, max-content) 1fr; gap: 12px; align-items: center; }
-.leyenda dd { margin: 0; color: var(--tinta-2); font-size: 0.92rem; }
 .btn-baja { color: var(--rojo); border: 1px solid #eeb1a8; background: var(--rojo-claro); }
 .btn-baja:hover:not(:disabled) { background: var(--rojo); color: var(--blanco); }
 .calc-clases { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; padding: 10px 12px; border-radius: var(--r); background: var(--azul-claro); border: 1px solid #b9cde3; }
 .calc-clases label { display: flex; align-items: center; gap: 8px; font-weight: 700; }
 .calc-clases input, .asist-clases input { width: 72px; min-height: 36px; padding: 0 8px; border: 1px solid var(--linea-2); border-radius: var(--r-chico); font: inherit; }
 .asist-clases { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; color: var(--azul); }
-@media (max-width: 760px) { .leyenda dl div { grid-template-columns: 1fr; gap: 2px; } }
+@media (max-width: 760px) { 
+.sin-guardar { display: block; margin-top: 4px; font-size: 0.8rem; font-weight: 700; color: #8a5a00; }

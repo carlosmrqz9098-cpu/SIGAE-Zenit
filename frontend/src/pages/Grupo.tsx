@@ -49,6 +49,7 @@ export function Grupo({ params }: { params: Record<string, string> }) {
       };
     });
     setCaptura(inicial);
+    setAsistio({});
     setErrores({});
   }, [datos]);
 
@@ -61,13 +62,30 @@ export function Grupo({ params }: { params: Record<string, string> }) {
   });
 
   const totalClases = Number(clases) > 0 ? Math.floor(Number(clases)) : 0;
+  const pctDe = (vino: number, total: number) => String(Math.min(100, Math.round((Math.min(vino, total) / total) * 100)));
+
   /** El docente escribe cuántas clases vino el alumno y el sistema saca el porcentaje. */
   function contarClases(id: number, v: string) {
     setAsistio((x) => ({ ...x, [id]: v }));
     const n = Number(v);
-    if (totalClases && v !== "" && Number.isFinite(n) && n >= 0) {
-      poner(id, { asistencia: String(Math.min(100, Math.round((Math.min(n, totalClases) / totalClases) * 100))) });
-    }
+    if (totalClases && v !== "" && Number.isFinite(n) && n >= 0) poner(id, { asistencia: pctDe(n, totalClases) });
+  }
+
+  /** Si escribe el % a mano o usa un botón rápido, "Vino a" se ajusta para que no se contradigan. */
+  function ponerPorcentaje(id: number, v: string) {
+    poner(id, { asistencia: v });
+    const n = Number(v);
+    setAsistio((x) => ({ ...x, [id]: totalClases && v !== "" && Number.isFinite(n) ? String(Math.round((n / 100) * totalClases)) : "" }));
+  }
+
+  /** Si cambia el total de clases, se recalcula el % de quien ya tiene "Vino a". */
+  function cambiarTotal(v: string) {
+    setClases(v);
+    const t = Number(v) > 0 ? Math.floor(Number(v)) : 0;
+    if (!t) return;
+    Object.entries(asistio).forEach(([id, vino]) => {
+      if (vino !== "" && Number.isFinite(Number(vino))) poner(Number(id), { asistencia: pctDe(Number(vino), t) });
+    });
   }
   const poner = (id: number, cambio: Partial<Captura>) =>
     setCaptura((x) => ({ ...x, [id]: { ...x[id], ...cambio } }));
@@ -148,7 +166,7 @@ export function Grupo({ params }: { params: Record<string, string> }) {
             </div>
             {editables.length > 0 && (
               <div className="barra-grupo">
-                <Boton variante="secundario" className="btn-chico" onClick={() => todos({ asistencia: "100" })}>Todos con 100 % de asistencia</Boton>
+                <Boton variante="secundario" className="btn-chico" onClick={() => { todos({ asistencia: "100" }); setAsistio({}); }}>Todos con 100 % de asistencia</Boton>
                 <Boton variante="secundario" className="btn-chico" onClick={() => todos({ evidencia: true })}>Todos entregaron evidencia</Boton>
                 <span className="texto-suave">Después ajusta solo a quien le falte y da clic en Guardar.</span>
               </div>
@@ -157,7 +175,7 @@ export function Grupo({ params }: { params: Record<string, string> }) {
               <div className="calc-clases">
                 <label>
                   <span>¿Cuántas clases has dado?</span>
-                  <input type="number" min={1} inputMode="numeric" value={clases} onChange={(e) => setClases(e.target.value)} placeholder="Ej. 20" />
+                  <input type="number" min={1} inputMode="numeric" value={clases} onChange={(e) => cambiarTotal(e.target.value)} placeholder="Ej. 20" />
                 </label>
                 <span className="texto-suave">
                   {totalClases ? `Escribe cuántas vino cada alumno y el porcentaje se calcula solo (de ${totalClases} clases).` : "Opcional: si lo llenas, en cada alumno escribes cuántas clases vino y el % se calcula solo."}
@@ -193,7 +211,7 @@ export function Grupo({ params }: { params: Record<string, string> }) {
                                 <input className={`num ${errores[a.id_inscripcion] ? "con-error" : ""}`} type="number" min={0} max={100} step={1}
                                   inputMode="numeric" disabled={cancelada || !c} value={c?.asistencia ?? ""}
                                   aria-label={`Asistencia de ${a.nombre}`}
-                                  onChange={(e) => poner(a.id_inscripcion, { asistencia: e.target.value })} />
+                                  onChange={(e) => ponerPorcentaje(a.id_inscripcion, e.target.value)} />
                                 <span className="texto-suave">%</span>
                               </div>
                               {!cancelada && c && totalClases > 0 && (
@@ -208,7 +226,7 @@ export function Grupo({ params }: { params: Record<string, string> }) {
                                 <div className="asist-rapida" role="group" aria-label={`Asistencia rápida de ${a.nombre}`}>
                                   {["100", "90", "80", "70", "50", "0"].map((v) => (
                                     <button type="button" key={v} className={`${c.asistencia === v ? "on" : ""} ${v === "0" ? "cero" : ""}`}
-                                      onClick={() => poner(a.id_inscripcion, { asistencia: v })}>{v}</button>
+                                      onClick={() => ponerPorcentaje(a.id_inscripcion, v)}>{v}</button>
                                   ))}
                                 </div>
                               )}
@@ -225,6 +243,9 @@ export function Grupo({ params }: { params: Record<string, string> }) {
                           <td data-col="Crédito">
                             <EstadoCredito chico valor={cancelada ? "Cancelada" : a.estatus_credito} />
                             {a.fecha_evaluacion && <span className="texto-suave mini">{fechaHora(a.fecha_evaluacion)}</span>}
+                            {cambios.some((x) => x.id_inscripcion === a.id_inscripcion) && (
+                              <span className="sin-guardar">Sin guardar: el crédito se actualiza al dar clic en Guardar.</span>
+                            )}
                           </td>
                         </tr>
                       );

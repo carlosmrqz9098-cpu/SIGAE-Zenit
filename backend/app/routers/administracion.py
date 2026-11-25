@@ -114,7 +114,9 @@ def actividades(u: UsuarioActual = Depends(admin_o_personal)):
                    a.dias, a.hora_inicio, a.hora_fin, a.cupo_maximo, a.estado::text as estado,
                    p.nombre as periodo, au.nombre as aula, r.nombre as responsable,
                    (select count(*) from sigae.inscripcion i
-                     where i.id_actividad = a.id_actividad and i.estado = 'Activa') as inscritos
+                     where i.id_actividad = a.id_actividad and i.estado = 'Activa') as inscritos,
+                   exists (select 1 from sigae.inscripcion i
+                            where i.id_actividad = a.id_actividad) as tiene_inscripciones
               from sigae.actividad a
               join sigae.periodo p on p.id_periodo = a.id_periodo
               join sigae.aula au on au.id_aula = a.id_aula
