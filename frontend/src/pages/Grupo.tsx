@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { TiraDias } from "../components/Horario";
 import { Boton, CajaError, Cargando, Encabezado, Insignia, useAvisos, Vacio } from "../components/ui";
-import { api, ApiError } from "../lib/api";
+import { api, ApiError, descargarArchivo } from "../lib/api";
 import { fechaHora } from "../lib/formato";
 import { Enlace } from "../lib/router";
 import { useSesion } from "../lib/sesion";
@@ -41,6 +41,7 @@ export function Grupo({ params }: { params: Record<string, string> }) {
   const [errores, setErrores] = useState<Record<number, string>>({});
   const [guardando, setGuardando] = useState(false);
   const [busqueda, setBusqueda] = useState("");
+  const [descargando, setDescargando] = useState(false);
   const avisar = useAvisos();
 
   useEffect(() => {
@@ -119,6 +120,21 @@ export function Grupo({ params }: { params: Record<string, string> }) {
     }
   }
 
+  // Mejora SCRUM-68: baja el CSV del grupo desde el endpoint de Ángel (SCRUM-58).
+  async function descargarLista() {
+    if (!datos) return;
+    setDescargando(true);
+    try {
+      const base = normaliza(datos.actividad.nombre).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || `grupo-${id}`;
+      await descargarArchivo(`/api/actividades/${id}/lista.csv`, `lista-${base}.csv`);
+      avisar("Se descargó la lista del grupo");
+    } catch (e) {
+      avisar((e as ApiError).message, "error");
+    } finally {
+      setDescargando(false);
+    }
+  }
+
   const volver = usuario?.rol === "Administrador" || usuario?.rol === "Personal" ? "/actividades" : "/grupos";
 
   return (
@@ -138,9 +154,17 @@ export function Grupo({ params }: { params: Record<string, string> }) {
           <section className="bloque">
             <div className="bloque-cabeza">
               <h2>Lista del grupo <span className="contador">{editables.length}</span></h2>
-              <Boton onClick={guardar} cargando={guardando} disabled={cambios.length === 0}>
-                {cambios.length ? `Guardar ${cambios.length} ${cambios.length === 1 ? "cambio" : "cambios"}` : "Sin cambios"}
-              </Boton>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                {/* Mejora SCRUM-68: botón "Descargar lista" */}
+                {datos.lista.length > 0 && (
+                  <Boton icono="descargar" onClick={descargarLista} cargando={descargando}>
+                    {descargando ? "Descargando…" : "Descargar lista"}
+                  </Boton>
+                )}
+                <Boton onClick={guardar} cargando={guardando} disabled={cambios.length === 0}>
+                  {cambios.length ? `Guardar ${cambios.length} ${cambios.length === 1 ? "cambio" : "cambios"}` : "Sin cambios"}
+                </Boton>
+              </div>
             </div>
             {datos.lista.length === 0 ? (
               <Vacio titulo="Nadie se ha inscrito todavía" texto="Cuando los alumnos se inscriban, aparecerán aquí." />
