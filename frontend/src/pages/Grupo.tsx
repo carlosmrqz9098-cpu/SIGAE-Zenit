@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { TiraDias } from "../components/Horario";
-import { Boton, CajaError, Cargando, Encabezado, Insignia, useAvisos, Vacio } from "../components/ui";
+import { Boton, CajaError, Cargando, Encabezado, EstadoCredito, Insignia, useAvisos, Vacio } from "../components/ui";
 import { api, ApiError } from "../lib/api";
 import { fechaHora } from "../lib/formato";
 import { Enlace } from "../lib/router";
@@ -193,7 +193,7 @@ export function Grupo({ params }: { params: Record<string, string> }) {
                             </label>
                           </td>
                           <td data-col="Crédito">
-                            <Insignia valor={cancelada ? "Cancelada" : a.estatus_credito} />
+                            <EstadoCredito chico valor={cancelada ? "Cancelada" : a.estatus_credito} />
                             {a.fecha_evaluacion && <span className="texto-suave mini">{fechaHora(a.fecha_evaluacion)}</span>}
                           </td>
                         </tr>

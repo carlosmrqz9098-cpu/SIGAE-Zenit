@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { TiraDias } from "../components/Horario";
 import { Icono } from "../components/Icono";
-import { Boton, CajaError, Cargando, Confirmar, Encabezado, Insignia, useAvisos, Vacio } from "../components/ui";
+import { Boton, CajaError, Cargando, Confirmar, Encabezado, EstadoCredito, useAvisos, Vacio } from "../components/ui";
 import { api, ApiError } from "../lib/api";
 import { Enlace } from "../lib/router";
 import type { MiInscripcion } from "../lib/tipos";
@@ -87,8 +87,8 @@ export function MisInscripciones() {
                 <p className="texto-suave">{i.aula}{i.ubicacion ? `, ${i.ubicacion}` : ""}{i.responsable ? ` · ${i.responsable}` : ""}</p>
               </div>
               <div className="credito">
-                <span>Crédito</span>
-                <Insignia valor={i.estado_inscripcion === "Cancelada" ? "Cancelada" : i.estatus_credito} />
+                <span>Mi crédito</span>
+                <EstadoCredito para="alumno" valor={i.estado_inscripcion === "Cancelada" ? "Cancelada" : i.estatus_credito} />
               </div>
             </div>
             <TiraDias dias={i.dias} inicio={i.hora_inicio} fin={i.hora_fin} />

@@ -66,6 +66,29 @@ export function Insignia({ valor }: { valor: string | null | undefined }) {
   return <span className={`insignia insignia-${TONO[v] ?? "gris"}`}>{v}</span>;
 }
 
+// ------------------------------------------------------------------ Estado del crédito (grande y claro)
+const CREDITO: Record<string, { tono: string; icono: string; alumno: string; otros: string }> = {
+  Acreditado: { tono: "verde", icono: "check", alumno: "¡Ya tienes tu crédito!", otros: "Cumplió asistencia y evidencia" },
+  "No acreditado": { tono: "rojo", icono: "cerrar", alumno: "No cumpliste la asistencia o la evidencia", otros: "No cumple asistencia o evidencia" },
+  Pendiente: { tono: "amarillo", icono: "reloj", alumno: "Todavía no te evalúan", otros: "Falta capturar asistencia y evidencia" },
+  Cancelada: { tono: "morado", icono: "cerrar", alumno: "Te diste de baja", otros: "Se dio de baja" },
+};
+
+/** Muestra el crédito con color, ícono y una frase corta para que se entienda a la primera. */
+export function EstadoCredito({ valor, para = "otros", chico }: { valor: string | null | undefined; para?: "alumno" | "otros"; chico?: boolean }) {
+  const v = valor ?? "Pendiente";
+  const c = CREDITO[v] ?? CREDITO.Pendiente;
+  return (
+    <div className={`estado-credito ec-${c.tono} ${chico ? "chico" : ""}`} role="status">
+      <span className="ec-icono" aria-hidden><Icono nombre={c.icono} tam={chico ? 16 : 22} /></span>
+      <span className="ec-texto">
+        <strong>{v}</strong>
+        <small>{para === "alumno" ? c.alumno : c.otros}</small>
+      </span>
+    </div>
+  );
+}
+
 // ------------------------------------------------------------------ Paginación
 /** Parte una lista en páginas. Regresa la página visible y los datos para <Paginacion>. */
 export function usePaginas<T>(lista: T[], porPagina = 10) {
