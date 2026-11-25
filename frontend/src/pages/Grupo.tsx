@@ -58,6 +58,15 @@ export function Grupo({ params }: { params: Record<string, string> }) {
     return c.asistencia !== antes || c.evidencia !== !!a.evidencia_cumplida;
   });
 
+  const poner = (id: number, cambio: Partial<Captura>) =>
+    setCaptura((x) => ({ ...x, [id]: { ...x[id], ...cambio } }));
+  const todos = (cambio: Partial<Captura>) =>
+    setCaptura((x) => {
+      const n = { ...x };
+      editables.forEach((a) => { if (n[a.id_inscripcion]) n[a.id_inscripcion] = { ...n[a.id_inscripcion], ...cambio }; });
+      return n;
+    });
+
   function valida(v: string) {
     if (v === "") return "Escribe un porcentaje";
     const n = Number(v);
@@ -107,7 +116,7 @@ export function Grupo({ params }: { params: Record<string, string> }) {
 
   return (
     <>
-      <Enlace a={volver} className="migas">← {volver === "/grupos" ? "Mis grupos" : "Actividades"}</Enlace>
+      <Enlace a={volver} className="regresar">← {volver === "/grupos" ? "Mis grupos" : "Actividades"}</Enlace>
       {cargando && !datos && <Cargando />}
       {error && <CajaError mensaje={error} reintentar={recargar} />}
       {datos && (
@@ -116,7 +125,7 @@ export function Grupo({ params }: { params: Record<string, string> }) {
             acciones={<Insignia valor={datos.actividad.estado} />} />
           <div className="ficha">
             <TiraDias dias={datos.actividad.dias} inicio={datos.actividad.hora_inicio} fin={datos.actividad.hora_fin} />
-            <p>Para acreditar: <strong>{datos.actividad.asistencia_minima ?? "80"}%</strong> de asistencia y evidencia entregada. El estatus lo calcula el sistema.</p>
+            <p>Para acreditar: <strong>{datos.actividad.asistencia_minima ?? "80"}%</strong> de asistencia y evidencia entregada. El estatus lo calcula el sistema: si cumple queda <strong>Acreditado</strong> y si no, <strong>No acreditado</strong>.</p>
           </div>
 
           <section className="bloque">
@@ -126,6 +135,13 @@ export function Grupo({ params }: { params: Record<string, string> }) {
                 {cambios.length ? `Guardar ${cambios.length} ${cambios.length === 1 ? "cambio" : "cambios"}` : "Sin cambios"}
               </Boton>
             </div>
+            {editables.length > 0 && (
+              <div className="barra-grupo">
+                <Boton variante="secundario" className="btn-chico" onClick={() => todos({ asistencia: "100" })}>Todos con 100 % de asistencia</Boton>
+                <Boton variante="secundario" className="btn-chico" onClick={() => todos({ evidencia: true })}>Todos entregaron evidencia</Boton>
+                <span className="texto-suave">Después ajusta solo a quien le falte y da clic en Guardar.</span>
+              </div>
+            )}
             {datos.lista.length === 0 ? (
               <Vacio titulo="Nadie se ha inscrito todavía" texto="Cuando los alumnos se inscriban, aparecerán aquí." />
             ) : (
@@ -150,16 +166,29 @@ export function Grupo({ params }: { params: Record<string, string> }) {
                             <span className="texto-suave">{a.matricula}{cancelada ? " · dado de baja" : ""}</span>
                           </td>
                           <td data-col="Asistencia (%)">
-                            <input className={`num ${errores[a.id_inscripcion] ? "con-error" : ""}`} type="number" min={0} max={100} step={1}
-                              inputMode="numeric" disabled={cancelada || !c} value={c?.asistencia ?? ""}
-                              aria-label={`Asistencia de ${a.nombre}`}
-                              onChange={(e) => setCaptura((x) => ({ ...x, [a.id_inscripcion]: { ...x[a.id_inscripcion], asistencia: e.target.value } }))} />
+                            <div className="asist">
+                              <div className="asist-fila">
+                                <input className={`num ${errores[a.id_inscripcion] ? "con-error" : ""}`} type="number" min={0} max={100} step={1}
+                                  inputMode="numeric" disabled={cancelada || !c} value={c?.asistencia ?? ""}
+                                  aria-label={`Asistencia de ${a.nombre}`}
+                                  onChange={(e) => poner(a.id_inscripcion, { asistencia: e.target.value })} />
+                                <span className="texto-suave">%</span>
+                              </div>
+                              {!cancelada && c && (
+                                <div className="asist-rapida" role="group" aria-label={`Asistencia rápida de ${a.nombre}`}>
+                                  {["100", "90", "80", "70", "50", "0"].map((v) => (
+                                    <button type="button" key={v} className={`${c.asistencia === v ? "on" : ""} ${v === "0" ? "cero" : ""}`}
+                                      onClick={() => poner(a.id_inscripcion, { asistencia: v })}>{v}</button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                             {errores[a.id_inscripcion] && <span className="campo-msg">{errores[a.id_inscripcion]}</span>}
                           </td>
                           <td data-col="Evidencia">
                             <label className="interruptor">
                               <input type="checkbox" disabled={cancelada || !c} checked={c?.evidencia ?? false}
-                                onChange={(e) => setCaptura((x) => ({ ...x, [a.id_inscripcion]: { ...x[a.id_inscripcion], evidencia: e.target.checked } }))} />
+                                onChange={(e) => poner(a.id_inscripcion, { evidencia: e.target.checked })} />
                               <span>{c?.evidencia ? "Entregada" : "No entregada"}</span>
                             </label>
                           </td>

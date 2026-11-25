@@ -66,6 +66,48 @@ export function Insignia({ valor }: { valor: string | null | undefined }) {
   return <span className={`insignia insignia-${TONO[v] ?? "gris"}`}>{v}</span>;
 }
 
+// ------------------------------------------------------------------ Paginación
+/** Parte una lista en páginas. Regresa la página visible y los datos para <Paginacion>. */
+export function usePaginas<T>(lista: T[], porPagina = 10) {
+  const [pagina, setPagina] = useState(1);
+  const total = lista.length;
+  const paginas = Math.max(1, Math.ceil(total / porPagina));
+  const actual = Math.min(pagina, paginas);
+  useEffect(() => { if (pagina > paginas) setPagina(paginas); }, [pagina, paginas]);
+  const visibles = lista.slice((actual - 1) * porPagina, actual * porPagina);
+  return { visibles, pagina: actual, paginas, total, porPagina, setPagina };
+}
+
+export function Paginacion({ pagina, paginas, total, porPagina, setPagina }: {
+  pagina: number; paginas: number; total: number; porPagina: number; setPagina: (n: number) => void;
+}) {
+  if (total === 0) return null;
+  const desde = (pagina - 1) * porPagina + 1;
+  const hasta = Math.min(pagina * porPagina, total);
+  const ir = (n: number) => { setPagina(n); document.getElementById("contenido")?.scrollIntoView({ block: "start" }); };
+  // Números visibles: primera, última y las vecinas de la actual
+  const nums = Array.from({ length: paginas }, (_, i) => i + 1)
+    .filter((n) => n === 1 || n === paginas || Math.abs(n - pagina) <= 1);
+  return (
+    <nav className="paginacion" aria-label="Páginas">
+      <span className="paginacion-info">Mostrando <strong>{desde}–{hasta}</strong> de <strong>{total}</strong></span>
+      {paginas > 1 && (
+        <div className="paginacion-botones">
+          <button className="pag-btn" disabled={pagina <= 1} onClick={() => ir(pagina - 1)} aria-label="Página anterior">‹ Anterior</button>
+          {nums.map((n, i) => (
+            <span key={n} className="pag-grupo">
+              {i > 0 && n - nums[i - 1] > 1 && <span className="pag-puntos">…</span>}
+              <button className={`pag-btn ${n === pagina ? "actual" : ""}`} aria-current={n === pagina ? "page" : undefined}
+                onClick={() => ir(n)}>{n}</button>
+            </span>
+          ))}
+          <button className="pag-btn" disabled={pagina >= paginas} onClick={() => ir(pagina + 1)} aria-label="Página siguiente">Siguiente ›</button>
+        </div>
+      )}
+    </nav>
+  );
+}
+
 // ------------------------------------------------------------------ Encabezado de página
 export function Encabezado({ titulo, texto, acciones }: { titulo: string; texto?: string; acciones?: ReactNode }) {
   return (

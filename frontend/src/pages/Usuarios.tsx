@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Icono } from "../components/Icono";
-import { Boton, CajaError, Campo, Cargando, Encabezado, Insignia, Modal, useAvisos, Vacio } from "../components/ui";
+import { Boton, CajaError, Campo, Cargando, Encabezado, Insignia, Modal, Paginacion, useAvisos, usePaginas, Vacio } from "../components/ui";
 import { api, ApiError } from "../lib/api";
 import { fecha } from "../lib/formato";
 import { useSesion } from "../lib/sesion";
@@ -26,6 +26,7 @@ export function Usuarios() {
 
   const lista = useMemo(() => (datos ?? []).filter((u) =>
     (!rol || u.rol === rol) && (!filtro || `${u.nombre} ${u.correo} ${u.matricula ?? ""}`.toLowerCase().includes(filtro.toLowerCase()))), [datos, filtro, rol]);
+  const pag = usePaginas(lista, 10);
 
   function abrir(u: U | "nuevo") {
     setErrorForm(null);
@@ -101,7 +102,7 @@ export function Usuarios() {
           <table className="tabla">
             <thead><tr><th scope="col">Nombre</th><th scope="col">Rol</th><th scope="col">Matrícula</th><th scope="col">Alta</th><th scope="col">Acceso</th>{esAdmin && <th scope="col"><span className="sr">Acciones</span></th>}</tr></thead>
             <tbody>
-              {lista.map((u) => (
+              {pag.visibles.map((u) => (
                 <tr key={u.id_usuario} className={u.activo ? "" : "apagada"}>
                   <td data-col="Nombre"><strong>{u.nombre}</strong><span className="texto-suave">{u.correo}</span></td>
                   <td data-col="Rol">{u.rol}</td>
@@ -110,8 +111,8 @@ export function Usuarios() {
                   <td data-col="Acceso"><span className={`insignia insignia-${u.activo ? "verde" : "rojo"}`}>{u.activo ? "Activo" : "Desactivado"}</span></td>
                   {esAdmin && (
                     <td className="acciones-fila">
-                      <button className="icono-btn" onClick={() => abrir(u)} aria-label={`Editar ${u.nombre}`} title="Editar"><Icono nombre="editar" /></button>
-                      <button className="icono-btn" onClick={() => { setErrorForm(null); setNuevaClave(""); setClave(u); }} aria-label={`Nueva contraseña para ${u.nombre}`} title="Asignar contraseña"><Icono nombre="bloquear" /></button>
+                      <button className="icono-btn editar" onClick={() => abrir(u)} aria-label={`Editar ${u.nombre}`} title="Editar"><Icono nombre="editar" /></button>
+                      <button className="icono-btn aviso" onClick={() => { setErrorForm(null); setNuevaClave(""); setClave(u); }} aria-label={`Nueva contraseña para ${u.nombre}`} title="Asignar contraseña"><Icono nombre="bloquear" /></button>
                     </td>
                   )}
                 </tr>
@@ -120,6 +121,7 @@ export function Usuarios() {
           </table>
         </div>
       )}
+      {lista.length > 0 && <Paginacion {...pag} />}
 
       <Modal titulo={editando === "nuevo" ? "Nuevo usuario" : "Editar usuario"} abierto={!!editando} alCerrar={() => setEditando(null)}
         pie={<><Boton variante="fantasma" onClick={() => setEditando(null)} disabled={guardando}>Cancelar</Boton><Boton type="submit" form="form-usuario" cargando={guardando}>Guardar</Boton></>}>

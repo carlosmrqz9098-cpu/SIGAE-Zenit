@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Icono } from "../components/Icono";
-import { Boton, CajaError, Campo, Cargando, Encabezado, Insignia, Modal, useAvisos, Vacio } from "../components/ui";
+import { Boton, CajaError, Campo, Cargando, Encabezado, Insignia, Modal, Paginacion, useAvisos, usePaginas, Vacio } from "../components/ui";
 import { api, ApiError } from "../lib/api";
 import { aInputLocal, deInputLocal, fechaHora } from "../lib/formato";
 import { useSesion } from "../lib/sesion";
@@ -47,6 +47,8 @@ export function Periodos() {
     }
   }
 
+  const pag = usePaginas(datos ?? [], 10);
+
   return (
     <>
       <Encabezado titulo="Periodos de inscripción" texto="El sistema abre y cierra cada periodo solo, en la fecha y hora indicadas."
@@ -59,20 +61,21 @@ export function Periodos() {
           <table className="tabla">
             <thead><tr><th scope="col">Periodo</th><th scope="col">Abre</th><th scope="col">Cierra</th><th scope="col">Actividades</th><th scope="col">Estado</th>{esAdmin && <th scope="col"><span className="sr">Acciones</span></th>}</tr></thead>
             <tbody>
-              {datos.map((p) => (
+              {pag.visibles.map((p) => (
                 <tr key={p.id_periodo}>
                   <td data-col="Periodo"><strong>{p.nombre}</strong></td>
                   <td data-col="Abre">{fechaHora(p.fecha_hora_inicio)}</td>
                   <td data-col="Cierra">{fechaHora(p.fecha_hora_fin)}</td>
                   <td data-col="Actividades">{p.actividades}</td>
                   <td data-col="Estado"><Insignia valor={p.estado} /></td>
-                  {esAdmin && <td className="acciones-fila">{p.estado !== "Cerrado" && <button className="icono-btn" onClick={() => abrir(p)} aria-label={`Editar ${p.nombre}`} title="Editar"><Icono nombre="editar" /></button>}</td>}
+                  {esAdmin && <td className="acciones-fila">{p.estado !== "Cerrado" && <button className="icono-btn editar" onClick={() => abrir(p)} aria-label={`Editar ${p.nombre}`} title="Editar"><Icono nombre="editar" /></button>}</td>}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+      {datos && datos.length > 0 && <Paginacion {...pag} />}
 
       <Modal titulo={editando === "nuevo" ? "Nuevo periodo" : "Editar periodo"} abierto={!!editando} alCerrar={() => setEditando(null)}
         pie={<><Boton variante="fantasma" onClick={() => setEditando(null)} disabled={guardando}>Cancelar</Boton><Boton type="submit" form="form-periodo" cargando={guardando}>Guardar</Boton></>}>

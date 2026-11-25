@@ -35,33 +35,56 @@ export function SeccionMateriales({ idActividad, compacta }: { idActividad: numb
   const entrada = useRef<HTMLInputElement>(null);
   const avisar = useAvisos();
 
+  const [cola, setCola] = useState<{ nombre: string; estado: "esperando" | "subiendo" | "listo" | "error"; msg?: string }[]>([]);
+
+  async function subirUno(archivo: File) {
+    if (!datos) return;
+    if (!TIPOS[archivo.type]) throw new Error("Formato no permitido. Solo PDF, Word (.docx), JPG y PNG.");
+    if (archivo.size > datos.limite_bytes) throw new Error(`Pesa ${tamano(archivo.size)}. El máximo es ${tamano(datos.limite_bytes)}.`);
+    const prep = await api<{ ruta: string; url_subida: string }>(`/api/actividades/${idActividad}/materiales/subida`, {
+      method: "POST", body: { nombre: archivo.name, tipo_mime: archivo.type, tamano_bytes: archivo.size },
+    });
+    await subirArchivo(prep.url_subida, archivo);
+    await api(`/api/actividades/${idActividad}/materiales`, {
+      method: "POST", body: { ruta: prep.ruta, nombre: archivo.name, tipo_mime: archivo.type },
+    });
+  }
+
+  /** Se pueden elegir varios archivos a la vez; se suben uno por uno y se ve cómo va cada uno. */
   async function elegir(e: ChangeEvent<HTMLInputElement>) {
-    const archivo = e.target.files?.[0];
+    const archivos = Array.from(e.target.files ?? []);
     e.target.value = "";
-    if (!archivo || !datos) return;
-    if (!TIPOS[archivo.type]) {
-      avisar("Formato no permitido. Solo PDF, Word (.docx), JPG y PNG.", "error");
-      return;
-    }
-    if (archivo.size > datos.limite_bytes) {
-      avisar(`El archivo pesa ${tamano(archivo.size)}. El máximo es ${tamano(datos.limite_bytes)}.`, "error");
-      return;
-    }
+    if (!archivos.length || !datos) return;
+    setCola(archivos.map((a) => ({ nombre: a.name, estado: "esperando" })));
     setSubiendo(true);
+    let bien = 0;
+    for (let k = 0; k < archivos.length; k++) {
+      setCola((c) => c.map((x, i) => (i === k ? { ...x, estado: "subiendo" } : x)));
+      try {
+        await subirUno(archivos[k]);
+        bien++;
+        setCola((c) => c.map((x, i) => (i === k ? { ...x, estado: "listo" } : x)));
+      } catch (err) {
+        const msg = err instanceof ApiError || err instanceof Error ? err.message : "No se pudo subir";
+        setCola((c) => c.map((x, i) => (i === k ? { ...x, estado: "error", msg } : x)));
+      }
+    }
+    setSubiendo(false);
+    const mal = archivos.length - bien;
+    if (mal === 0) avisar(bien === 1 ? `Se subió ${archivos[0].name}` : `Se subieron ${bien} archivos`);
+    else avisar(`Se subieron ${bien} de ${archivos.length}. Revisa los marcados en rojo.`, "error");
+    if (bien) recargar();
+  }
+
+  async function ver(m: Material) {
+    const ventana = window.open("", "_blank");  // se abre antes para que el navegador no la bloquee
     try {
-      const prep = await api<{ ruta: string; url_subida: string }>(`/api/actividades/${idActividad}/materiales/subida`, {
-        method: "POST", body: { nombre: archivo.name, tipo_mime: archivo.type, tamano_bytes: archivo.size },
-      });
-      await subirArchivo(prep.url_subida, archivo);
-      await api(`/api/actividades/${idActividad}/materiales`, {
-        method: "POST", body: { ruta: prep.ruta, nombre: archivo.name, tipo_mime: archivo.type },
-      });
-      avisar(`Se subió ${archivo.name}`);
-      recargar();
+      const { url } = await api<{ url: string }>(`/api/materiales/${m.id_material}/descarga?ver=true`);
+      if (ventana) ventana.location.href = url;
+      else window.location.assign(url);
     } catch (err) {
+      ventana?.close();
       avisar((err as ApiError).message, "error");
-    } finally {
-      setSubiendo(false);
     }
   }
 
@@ -99,16 +122,29 @@ export function SeccionMateriales({ idActividad, compacta }: { idActividad: numb
         {compacta ? <h2>Materiales</h2> : <span />}
         {datos.puede_gestionar && (
           <>
-            <input ref={entrada} type="file" hidden onChange={elegir}
+            <input ref={entrada} type="file" hidden multiple onChange={elegir}
               accept=".pdf,.docx,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
             <Boton icono="subir" cargando={subiendo} onClick={() => entrada.current?.click()}>
-              {subiendo ? "Subiendo…" : "Subir material"}
+              {subiendo ? "Subiendo…" : "Subir archivos"}
             </Boton>
           </>
         )}
       </div>
       {datos.puede_gestionar && (
-        <p className="texto-suave">PDF, Word (.docx), JPG o PNG de hasta {tamano(datos.limite_bytes)}.</p>
+        <p className="texto-suave">Puedes elegir varios archivos a la vez. PDF, Word (.docx), JPG o PNG de hasta {tamano(datos.limite_bytes)} cada uno.</p>
+      )}
+      {cola.length > 0 && (
+        <ul className="subida-cola" aria-live="polite">
+          {cola.map((c, i) => (
+            <li key={i}>
+              <span className={c.estado === "listo" ? "ok" : c.estado === "error" ? "mal" : ""}>
+                {c.estado === "listo" ? "✓" : c.estado === "error" ? "✗" : c.estado === "subiendo" ? "…" : "•"}
+              </span>
+              <span>{c.nombre}</span>
+              {c.msg && <span className="mal">{c.msg}</span>}
+            </li>
+          ))}
+        </ul>
       )}
       {datos.materiales.length === 0 ? (
         <Vacio titulo="Sin materiales todavía" texto={datos.puede_gestionar ? "Sube el primer archivo para tu grupo." : "Cuando el responsable suba archivos, aparecerán aquí."} />
@@ -121,7 +157,12 @@ export function SeccionMateriales({ idActividad, compacta }: { idActividad: numb
                 <strong>{m.nombre_original}</strong>
                 <span>{tamano(m.tamano_bytes)} · {fechaHora(m.fecha_carga)}{m.cargado_por ? ` · ${m.cargado_por}` : ""}</span>
               </div>
-              <button className="icono-btn" onClick={() => descargar(m)} aria-label={`Descargar ${m.nombre_original}`} title="Descargar">
+              {m.tipo_mime !== "application/vnd.openxmlformats-officedocument.wordprocessingml.document" && (
+                <button className="icono-btn ver" onClick={() => ver(m)} aria-label={`Ver ${m.nombre_original}`} title="Ver">
+                  <Icono nombre="ver" />
+                </button>
+              )}
+              <button className="icono-btn editar" onClick={() => descargar(m)} aria-label={`Descargar ${m.nombre_original}`} title="Descargar">
                 <Icono nombre="descargar" />
               </button>
               {datos.puede_gestionar && (
