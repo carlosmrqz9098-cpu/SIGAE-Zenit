@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Icono } from "../components/Icono";
-import { Boton, CajaError, Campo, Cargando, Encabezado, Insignia, Leyenda, Modal, Paginacion, useAvisos, usePaginas, Vacio } from "../components/ui";
+import { Boton, CajaError, Campo, Cargando, Encabezado, Insignia, Modal, Paginacion, useAvisos, usePaginas, Vacio } from "../components/ui";
 import { api, ApiError } from "../lib/api";
 import { aInputLocal, deInputLocal, fechaHora } from "../lib/formato";
 import { useSesion } from "../lib/sesion";
@@ -53,7 +53,6 @@ export function Periodos() {
     <>
       <Encabezado titulo="Periodos de inscripción" texto="El sistema abre y cierra cada periodo solo, en la fecha y hora indicadas."
         acciones={esAdmin && <Boton icono="mas" onClick={() => abrir("nuevo")}>Nuevo periodo</Boton>} />
-      <Leyenda estados={["Programado", "Activo", "Cerrado"]} />
       {cargando && !datos && <Cargando />}
       {error && <CajaError mensaje={error} reintentar={recargar} />}
       {datos && datos.length === 0 && <Vacio titulo="No hay periodos registrados" texto={esAdmin ? "Registra el primero para poder crear actividades." : undefined} />}

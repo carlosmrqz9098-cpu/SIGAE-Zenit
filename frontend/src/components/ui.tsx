@@ -80,22 +80,6 @@ export function Insignia({ valor }: { valor: string | null | undefined }) {
   return <span className={`insignia insignia-${TONO[v] ?? "gris"}`} title={SIGNIFICA[v]}>{v}</span>;
 }
 
-/** "¿Qué significa cada estado?" plegable, para quien usa el sistema por primera vez. */
-export function Leyenda({ titulo = "¿Qué significa cada estado?", estados, extra }: {
-  titulo?: string; estados?: string[]; extra?: [string, string][];
-}) {
-  const filas: [string, string][] = [...(estados ?? []).map((e) => [e, SIGNIFICA[e]] as [string, string]), ...(extra ?? [])];
-  return (
-    <details className="leyenda">
-      <summary><Icono nombre="alerta" tam={16} /> {titulo}</summary>
-      <dl>
-        {filas.map(([k, v]) => (
-          <div key={k}><dt>{estados?.includes(k) ? <Insignia valor={k} /> : <strong>{k}</strong>}</dt><dd>{v}</dd></div>
-        ))}
-      </dl>
-    </details>
-  );
-}
 
 // ------------------------------------------------------------------ Estado del crédito (grande y claro)
 const CREDITO: Record<string, { tono: string; icono: string; alumno: string; otros: string }> = {
@@ -110,7 +94,7 @@ export function EstadoCredito({ valor, para = "otros", chico }: { valor: string 
   const v = valor ?? "Pendiente";
   const c = CREDITO[v] ?? CREDITO.Pendiente;
   return (
-    <div className={`estado-credito ec-${c.tono} ${chico ? "chico" : ""}`} role="status">
+    <div className={`estado-credito ec-${c.tono} ${chico ? "chico" : ""}`}>
       <span className="ec-icono" aria-hidden><Icono nombre={c.icono} tam={chico ? 16 : 22} /></span>
       <span className="ec-texto">
         <strong>{v}</strong>
@@ -127,7 +111,7 @@ export function usePaginas<T>(lista: T[], porPagina = 10) {
   const total = lista.length;
   const paginas = Math.max(1, Math.ceil(total / porPagina));
   const actual = Math.min(pagina, paginas);
-  useEffect(() => { if (pagina > paginas) setPagina(paginas); }, [pagina, paginas]);
+  useEffect(() => { setPagina(1); }, [total]);  // si cambia la búsqueda o el filtro, empieza en la página 1
   const visibles = lista.slice((actual - 1) * porPagina, actual * porPagina);
   return { visibles, pagina: actual, paginas, total, porPagina, setPagina };
 }

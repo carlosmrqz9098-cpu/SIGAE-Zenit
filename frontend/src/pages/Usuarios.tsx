@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Icono } from "../components/Icono";
-import { Boton, CajaError, Campo, Cargando, Encabezado, Insignia, Leyenda, Modal, Paginacion, useAvisos, usePaginas, Vacio } from "../components/ui";
+import { Boton, CajaError, Campo, Cargando, Encabezado, Insignia, Modal, Paginacion, useAvisos, usePaginas, Vacio } from "../components/ui";
 import { api, ApiError } from "../lib/api";
 import { fecha } from "../lib/formato";
 import { useSesion } from "../lib/sesion";
@@ -12,12 +12,6 @@ const ROLES: Rol[] = ["Alumno", "Docente", "Personal", "Administrador"];
 const NOMBRE_ROL: Record<Rol, string> = {
   Alumno: "Alumno", Docente: "Docente", Personal: "Personal de Extra-Escolares", Administrador: "Administrador",
 };
-const QUE_HACE: [string, string][] = [
-  ["Alumno", "Se inscribe a actividades y ve su asistencia, su crédito y los materiales."],
-  ["Docente", "Ve la lista de sus grupos, captura asistencia y evidencia y sube materiales."],
-  ["Personal de Extra-Escolares", "Personal de la oficina: crea y edita actividades y consulta usuarios."],
-  ["Administrador", "Puede todo: periodos, aulas, usuarios, parámetros y bitácora."],
-];
 
 export function Usuarios() {
   const { usuario } = useSesion();
@@ -93,7 +87,6 @@ export function Usuarios() {
     <>
       <Encabezado titulo="Usuarios" texto={esAdmin ? "Registra cuentas, asigna roles y desactiva accesos." : "Consulta de las personas registradas."}
         acciones={esAdmin && <Boton icono="mas" onClick={() => abrir("nuevo")}>Nuevo usuario</Boton>} />
-      <Leyenda titulo="¿Qué puede hacer cada rol?" extra={QUE_HACE} />
       <div className="filtros">
         <label className="buscador">
           <Icono nombre="buscar" tam={18} />

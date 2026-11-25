@@ -66,7 +66,7 @@ export function Marco({ children }: { children: ReactNode }) {
         </div>
         <main id="contenido" tabIndex={-1}>
           {ruta !== "/" && !ruta.startsWith("/grupos/") && (
-            <button type="button" className="regresar" onClick={() => (window.history.length > 1 ? window.history.back() : ir("/"))}>
+            <button type="button" className="regresar" onClick={() => ((window.history.state?.sigae ?? 0) > 0 ? window.history.back() : ir("/"))}>
               <Icono nombre="atras" tam={16} /> Regresar
             </button>
           )}

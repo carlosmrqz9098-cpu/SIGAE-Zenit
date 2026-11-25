@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { TiraDias } from "../components/Horario";
 import { Icono } from "../components/Icono";
-import { Boton, CajaError, Campo, Cargando, Confirmar, Encabezado, Insignia, Leyenda, Modal, Paginacion, useAvisos, usePaginas, Vacio } from "../components/ui";
+import { Boton, CajaError, Campo, Cargando, Confirmar, Encabezado, Insignia, Modal, Paginacion, useAvisos, usePaginas, Vacio } from "../components/ui";
 import { api, ApiError } from "../lib/api";
 import { hora } from "../lib/formato";
 import { Enlace } from "../lib/router";
@@ -11,6 +11,7 @@ interface Actividad {
   id_actividad: number; id_periodo: number; id_aula: number; id_responsable: number | null;
   nombre: string; descripcion: string | null; dias: string; hora_inicio: string; hora_fin: string;
   cupo_maximo: number; estado: string; periodo: string; aula: string; responsable: string | null; inscritos: number;
+  tiene_inscripciones?: boolean;
 }
 interface Opcion { id: number; texto: string }
 
@@ -124,7 +125,6 @@ export function Actividades() {
       <Encabezado titulo="Actividades" texto="Las actividades nuevas quedan en borrador y se publican solas cuando abre su periodo."
         acciones={<Boton icono="mas" onClick={() => abrir("nueva")}>Nueva actividad</Boton>} />
 
-      <Leyenda estados={["Borrador", "Activa", "Llena", "Cerrada", "Inactiva"]} />
       <div className="filtros">
         <label className="buscador">
           <Icono nombre="buscar" tam={18} />
@@ -161,7 +161,7 @@ export function Actividades() {
                     {editable(a) && <button className="icono-btn con-texto editar" onClick={() => abrir(a)} aria-label={`Editar ${a.nombre}`} title="Editar"><Icono nombre="editar" tam={18} /><span>Editar</span></button>}
                     {editable(a) && <button className="icono-btn con-texto cuidado" onClick={() => setAccion({ tipo: "desactivar", a })} aria-label={`Desactivar ${a.nombre}`} title="Desactivar"><Icono nombre="bloquear" tam={18} /><span>Desactivar</span></button>}
                     {a.estado === "Inactiva" && <button className="icono-btn con-texto exito" onClick={() => setAccion({ tipo: "reactivar", a })} aria-label={`Reactivar ${a.nombre}`} title="Reactivar"><Icono nombre="recargar" tam={18} /><span>Reactivar</span></button>}
-                    {a.inscritos === 0 && <button className="icono-btn con-texto peligro" onClick={() => setAccion({ tipo: "eliminar", a })} aria-label={`Eliminar ${a.nombre}`} title="Eliminar"><Icono nombre="borrar" tam={18} /><span>Eliminar</span></button>}
+                    {!a.tiene_inscripciones && a.inscritos === 0 && <button className="icono-btn con-texto peligro" onClick={() => setAccion({ tipo: "eliminar", a })} aria-label={`Eliminar ${a.nombre}`} title="Eliminar"><Icono nombre="borrar" tam={18} /><span>Eliminar</span></button>}
                   </td>
                 </tr>
               ))}
