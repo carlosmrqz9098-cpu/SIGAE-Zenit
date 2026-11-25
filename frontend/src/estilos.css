@@ -87,7 +87,7 @@ img, svg { display: block; }
 }
 .avatar.chico { width: 32px; height: 32px; font-size: 0.8rem; }
 .principal { min-width: 0; }
-main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: none; }
+main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1600px; outline: none; }
 .barra-movil { display: none; }
 .velo { display: none; }
 
@@ -421,16 +421,6 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
   .ocupacion li { grid-template-columns: 1fr auto; }
   .ocupacion-barra { grid-column: 1 / -1; order: 3; }
 
-  /* Las tablas se vuelven fichas, una por renglón */
-  .tabla thead { display: none; }
-  .tabla, .tabla tbody, .tabla tr, .tabla td { display: block; width: 100%; }
-  .tabla tr { padding: 12px 14px; border-top: 1px solid var(--linea); }
-  .tabla tbody tr:first-child { border-top: 0; }
-  .tabla td { border: 0; padding: 4px 0; }
-  .tabla td[data-col]::before { content: attr(data-col); display: block; font-size: 0.78rem; color: var(--tinta-3); }
-  .tabla td[data-col="Actividad"]::before, .tabla td[data-col="Alumno"]::before, .tabla td[data-col="Nombre"]::before,
-  .tabla td[data-col="Periodo"]::before, .tabla td[data-col="Aula"]::before, .tabla td[data-col="Tarea"]::before { display: none; }
-  .acciones-fila { text-align: left; padding-top: 8px !important; }
   .cambios div { grid-template-columns: 1fr; gap: 2px; }
   .avisos { left: 12px; right: 12px; bottom: 12px; max-width: none; }
 }
@@ -505,3 +495,33 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
 .asist-clases { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; color: var(--azul); }
 @media (max-width: 760px) { 
 .sin-guardar { display: block; margin-top: 4px; font-size: 0.8rem; font-weight: 700; color: #8a5a00; }
+
+/* ------------------------------------------------------------- tablas según el tamaño de pantalla */
+/* Celular y tablet (y laptops chicas): cada renglón se vuelve una ficha */
+@media (max-width: 1365px) {
+  .tabla thead { display: none; }
+  .tabla, .tabla tbody, .tabla tr, .tabla td { display: block; width: 100%; }
+  .tabla tr { padding: 12px 14px; border-top: 1px solid var(--linea); }
+  .tabla tbody tr:first-child { border-top: 0; }
+  .tabla td { border: 0; padding: 4px 0; }
+  .tabla td[data-col]::before { content: attr(data-col); display: block; font-size: 0.78rem; color: var(--tinta-3); }
+  .tabla td[data-col="Actividad"]::before, .tabla td[data-col="Alumno"]::before, .tabla td[data-col="Nombre"]::before,
+  .tabla td[data-col="Periodo"]::before, .tabla td[data-col="Aula"]::before, .tabla td[data-col="Tarea"]::before { display: none; }
+  .acciones-fila { text-align: left; padding-top: 8px !important; }
+}
+/* Tablet: los datos cortos de la ficha van lado a lado para no hacerla tan larga */
+@media (min-width: 600px) and (max-width: 1365px) {
+  .tabla tbody tr { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px 20px; align-items: start; }
+  .tabla tbody td { width: auto; }
+  .tabla tbody td:first-child, .tabla tbody td.acciones-fila, .tabla tbody td[data-col="Detalle"],
+  .tabla tbody td[data-col="Qué pasó"], .tabla tbody td[data-col="Asistencia (%)"], .tabla tr.detalle td { grid-column: 1 / -1; }
+}
+/* Compu: tabla normal; los datos cortos no se parten en dos renglones */
+@media (min-width: 1366px) {
+  .tabla td { white-space: nowrap; }
+  .tabla td[data-col="Actividad"], .tabla td[data-col="Detalle"], .tabla td[data-col="Ubicación"], .tabla td[data-col="Alumno"],
+  .tabla td[data-col="Nombre"], .tabla td[data-col="Quién"], .tabla td[data-col="Periodo"], .tabla td[data-col="Asistencia (%)"] { white-space: normal; }
+  .tabla td.acciones-fila { width: 1%; }
+  .tabla td[data-col="Horario"] .tira { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .tabla td[data-col="Qué pasó"] > strong { display: inline; }
+}
