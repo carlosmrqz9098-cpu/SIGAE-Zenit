@@ -57,9 +57,9 @@ img, svg { display: block; }
 .saltar:focus { left: 8px; }
 
 /* ------------------------------------------------------------- marco */
-.marco { min-height: 100vh; display: grid; grid-template-columns: var(--ancho-lateral) 1fr; }
+.marco { min-height: 100vh; min-height: 100dvh; display: grid; grid-template-columns: var(--ancho-lateral) 1fr; }
 .lateral {
-  position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh; height: 100dvh; display: flex; flex-direction: column;
   background: var(--pizarra); color: #dce3ea; padding: 20px 14px;
 }
 .marca { display: flex; align-items: center; gap: 12px; padding: 4px 8px 22px; }
@@ -87,7 +87,7 @@ img, svg { display: block; }
 }
 .avatar.chico { width: 32px; height: 32px; font-size: 0.8rem; }
 .principal { min-width: 0; }
-main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: none; }
+main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1600px; outline: none; }
 .barra-movil { display: none; }
 .velo { display: none; }
 
@@ -350,7 +350,7 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
 .dia-chip input:focus-visible + span { outline: 3px solid var(--amarillo); outline-offset: 2px; }
 
 /* ------------------------------------------------------------- modal */
-.modal { border: 0; padding: 0; border-radius: var(--r-grande); width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 32px); box-shadow: 0 30px 60px -20px rgba(24, 33, 44, 0.45); color: var(--tinta); }
+.modal { border: 0; padding: 0; border-radius: var(--r-grande); width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); box-shadow: 0 30px 60px -20px rgba(24, 33, 44, 0.45); color: var(--tinta); }
 .modal-amplio { width: min(760px, calc(100vw - 24px)); }
 .modal::backdrop { background: rgba(20, 28, 38, 0.55); }
 .modal[open] { display: flex; flex-direction: column; }
@@ -369,7 +369,7 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
 @keyframes entra { from { transform: translateY(8px); opacity: 0; } }
 
 /* ------------------------------------------------------------- login */
-.login { min-height: 100vh; display: grid; grid-template-columns: 1.1fr 1fr; }
+.login { min-height: 100vh; min-height: 100dvh; display: grid; grid-template-columns: 1.1fr 1fr; }
 .login-arte { background: var(--pizarra); display: grid; place-items: center; padding: 48px; position: relative; overflow: hidden; }
 .login-arte::after {
   content: ""; position: absolute; inset: auto -10% -30% -10%; height: 60%;
@@ -421,16 +421,6 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
   .ocupacion li { grid-template-columns: 1fr auto; }
   .ocupacion-barra { grid-column: 1 / -1; order: 3; }
 
-  /* Las tablas se vuelven fichas, una por renglón */
-  .tabla thead { display: none; }
-  .tabla, .tabla tbody, .tabla tr, .tabla td { display: block; width: 100%; }
-  .tabla tr { padding: 12px 14px; border-top: 1px solid var(--linea); }
-  .tabla tbody tr:first-child { border-top: 0; }
-  .tabla td { border: 0; padding: 4px 0; }
-  .tabla td[data-col]::before { content: attr(data-col); display: block; font-size: 0.78rem; color: var(--tinta-3); }
-  .tabla td[data-col="Actividad"]::before, .tabla td[data-col="Alumno"]::before, .tabla td[data-col="Nombre"]::before,
-  .tabla td[data-col="Periodo"]::before, .tabla td[data-col="Aula"]::before, .tabla td[data-col="Tarea"]::before { display: none; }
-  .acciones-fila { text-align: left; padding-top: 8px !important; }
   .cambios div { grid-template-columns: 1fr; gap: 2px; }
   .avisos { left: 12px; right: 12px; bottom: 12px; max-width: none; }
 }
@@ -505,3 +495,33 @@ main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 1180px; outline: no
 .asist-clases { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; color: var(--azul); }
 @media (max-width: 760px) { 
 .sin-guardar { display: block; margin-top: 4px; font-size: 0.8rem; font-weight: 700; color: #8a5a00; }
+
+/* ------------------------------------------------------------- tablas según el tamaño de pantalla */
+/* Celular y tablet (y laptops chicas): cada renglón se vuelve una ficha */
+@media (max-width: 1365px) {
+  .tabla thead { display: none; }
+  .tabla, .tabla tbody, .tabla tr, .tabla td { display: block; width: 100%; }
+  .tabla tr { padding: 12px 14px; border-top: 1px solid var(--linea); }
+  .tabla tbody tr:first-child { border-top: 0; }
+  .tabla td { border: 0; padding: 4px 0; }
+  .tabla td[data-col]::before { content: attr(data-col); display: block; font-size: 0.78rem; color: var(--tinta-3); }
+  .tabla td[data-col="Actividad"]::before, .tabla td[data-col="Alumno"]::before, .tabla td[data-col="Nombre"]::before,
+  .tabla td[data-col="Periodo"]::before, .tabla td[data-col="Aula"]::before, .tabla td[data-col="Tarea"]::before { display: none; }
+  .acciones-fila { text-align: left; padding-top: 8px !important; }
+}
+/* Tablet: los datos cortos de la ficha van lado a lado para no hacerla tan larga */
+@media (min-width: 600px) and (max-width: 1365px) {
+  .tabla tbody tr { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px 20px; align-items: start; }
+  .tabla tbody td { width: auto; }
+  .tabla tbody td:first-child, .tabla tbody td.acciones-fila, .tabla tbody td[data-col="Detalle"],
+  .tabla tbody td[data-col="Qué pasó"], .tabla tbody td[data-col="Asistencia (%)"], .tabla tr.detalle td { grid-column: 1 / -1; }
+}
+/* Compu: tabla normal; los datos cortos no se parten en dos renglones */
+@media (min-width: 1366px) {
+  .tabla td { white-space: nowrap; }
+  .tabla td[data-col="Actividad"], .tabla td[data-col="Detalle"], .tabla td[data-col="Ubicación"], .tabla td[data-col="Alumno"],
+  .tabla td[data-col="Nombre"], .tabla td[data-col="Quién"], .tabla td[data-col="Periodo"], .tabla td[data-col="Asistencia (%)"] { white-space: normal; }
+  .tabla td.acciones-fila { width: 1%; }
+  .tabla td[data-col="Horario"] .tira { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .tabla td[data-col="Qué pasó"] > strong { display: inline; }
+}
