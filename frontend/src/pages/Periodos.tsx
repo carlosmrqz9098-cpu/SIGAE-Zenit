@@ -47,16 +47,27 @@ export function Periodos() {
     }
   }
 
-  const pag = usePaginas(datos ?? [], 10);
+  const [filtro, setFiltro] = useState("");
+  const lista = (datos ?? []).filter((p) => !filtro || p.nombre.toLowerCase().includes(filtro.toLowerCase()));
+  const pag = usePaginas(lista, 10);
 
   return (
     <>
       <Encabezado titulo="Periodos de inscripción" texto="El sistema abre y cierra cada periodo solo, en la fecha y hora indicadas."
         acciones={esAdmin && <Boton icono="mas" onClick={() => abrir("nuevo")}>Nuevo periodo</Boton>} />
+      {datos && datos.length > 0 && (
+        <div className="filtros">
+          <label className="buscador">
+            <Icono nombre="buscar" tam={18} />
+            <input type="search" placeholder="Buscar periodo" value={filtro} onChange={(e) => setFiltro(e.target.value)} aria-label="Buscar periodos" />
+          </label>
+        </div>
+      )}
       {cargando && !datos && <Cargando />}
       {error && <CajaError mensaje={error} reintentar={recargar} />}
       {datos && datos.length === 0 && <Vacio titulo="No hay periodos registrados" texto={esAdmin ? "Registra el primero para poder crear actividades." : undefined} />}
-      {datos && datos.length > 0 && (
+      {datos && datos.length > 0 && lista.length === 0 && <Vacio titulo="Ningún periodo coincide" texto="Cambia la búsqueda." />}
+      {lista.length > 0 && (
         <div className="tabla-envoltura">
           <table className="tabla">
             <thead><tr><th scope="col">Periodo</th><th scope="col">Abre</th><th scope="col">Cierra</th><th scope="col">Actividades</th><th scope="col">Estado</th>{esAdmin && <th scope="col"><span className="sr">Acciones</span></th>}</tr></thead>
@@ -75,7 +86,7 @@ export function Periodos() {
           </table>
         </div>
       )}
-      {datos && datos.length > 0 && <Paginacion {...pag} />}
+      {lista.length > 0 && <Paginacion {...pag} />}
 
       <Modal titulo={editando === "nuevo" ? "Nuevo periodo" : "Editar periodo"} abierto={!!editando} alCerrar={() => setEditando(null)}
         pie={<><Boton variante="fantasma" onClick={() => setEditando(null)} disabled={guardando}>Cancelar</Boton><Boton type="submit" form="form-periodo" cargando={guardando}>Guardar</Boton></>}>

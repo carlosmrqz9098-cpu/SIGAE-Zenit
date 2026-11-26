@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Marcador, TiraDias } from "../components/Horario";
 import { Icono } from "../components/Icono";
-import { Boton, CajaError, Cargando, Confirmar, Encabezado, Insignia, useAvisos, Vacio } from "../components/ui";
+import { Boton, CajaError, Cargando, Confirmar, DirigidaInsignia, Encabezado, Importante, Insignia, Paginacion, useAvisos, usePaginas, Vacio } from "../components/ui";
 import { api, ApiError } from "../lib/api";
 import { diasMarcados, hora } from "../lib/formato";
 import { Enlace } from "../lib/router";
@@ -48,6 +48,7 @@ export function Catalogo() {
   const lista = (datos ?? [])
     .filter((a) => !soloLibres || a.lugares_disponibles > 0)
     .filter((a) => diasFiltro.length === 0 || letrasDe(a.dias).some((d) => diasFiltro.includes(d)));
+  const pag = usePaginas(lista, 12);
   const hayFiltros = soloLibres || diasFiltro.length > 0;
 
   function alternarDia(letra: string) {
@@ -107,8 +108,10 @@ export function Catalogo() {
         <p className="filtro-cuenta">Mostrando {lista.length} de {datos.length} actividades</p>
       )}
 
-      {periodoCerrado && (
-        <div className="aviso-suave aviso-ambar">Las inscripciones están cerradas en este momento. Puedes consultar las actividades, pero no inscribirte.</div>
+      {periodoCerrado ? (
+        <Importante tono="ambar" titulo="Inscripciones cerradas">Puedes consultar las actividades, pero ahorita no puedes inscribirte.</Importante>
+      ) : (
+        <Importante titulo="Antes de inscribirte">Solo puedes tomar <strong>una actividad por periodo</strong>. Revisa que el horario no se cruce con tus clases.</Importante>
       )}
 
       {cargando && !datos && <Cargando texto="Buscando actividades…" />}
@@ -119,7 +122,7 @@ export function Catalogo() {
       )}
 
       <div className="tarjetas" aria-busy={cargando}>
-        {lista.map((a) => {
+        {pag.visibles.map((a) => {
           const puede = a.periodo_abierto && !a.ya_inscrito && a.lugares_disponibles > 0 && a.estado === "Activa";
           const choques = a.ya_inscrito ? [] : choquesDe(a, mias);
           return (
@@ -128,6 +131,7 @@ export function Catalogo() {
                 <div className="tarjeta-act-cabeza">
                   <h2>{a.nombre}</h2>
                   {a.ya_inscrito ? <span className="insignia insignia-verde">Inscrito</span> : a.estado !== "Activa" && <Insignia valor={a.estado} />}
+                  <DirigidaInsignia valor={a.dirigida_a} />
                 </div>
                 {a.descripcion && <p className="tarjeta-act-desc">{a.descripcion}</p>}
                 <TiraDias dias={a.dias} inicio={a.hora_inicio} fin={a.hora_fin} />
@@ -153,6 +157,7 @@ export function Catalogo() {
           );
         })}
       </div>
+      {lista.length > 0 && <Paginacion {...pag} />}
 
       <Confirmar
         abierto={!!elegida}

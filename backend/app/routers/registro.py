@@ -33,7 +33,7 @@ def registro(body: Registro):
         if conn.execute("select 1 from sigae.usuario where matricula = %s", (body.matricula,)).fetchone():
             raise ErrorSIGAE(409, "Esa matrícula ya tiene una cuenta. Si es tuya, recupera tu contraseña.", "MATRICULA_EXISTE")
     supabase.registrar(body.correo, body.contrasena,
-                       {"nombre": body.nombre_completo, "rol": "Alumno", "matricula": body.matricula})
+                       {"nombre": body.nombre_completo, "rol": "Alumno", "matricula": body.matricula, "sexo": body.sexo})
     return {"mensaje": f"Te enviamos un código de 6 números a {body.correo}."}
 
 
@@ -43,16 +43,17 @@ def reenviar(body: SoloCorreo):
     return {"mensaje": "Si tu registro está pendiente, te llegará un código nuevo."}
 
 
-def _datos_validos(usuario: dict) -> tuple[str, str]:
+def _datos_validos(usuario: dict) -> tuple[str, str, str | None]:
     """Vuelve a revisar los datos guardados al registrarse (nadie debe poder ponerse otro rol)."""
     meta = usuario.get("user_metadata") or {}
     correo = (usuario.get("email") or "").lower()
     nombre, rol, matricula = str(meta.get("nombre") or ""), meta.get("rol"), meta.get("matricula")
+    sexo = meta.get("sexo") if meta.get("sexo") in ("Hombre", "Mujer") else None
     ok = (correo.endswith(DOMINIO_ITP) and rol == "Alumno" and _NOMBRE.match(nombre)
           and isinstance(matricula, str) and re.fullmatch(r"\d{8}", matricula))
     if not ok:
         raise ErrorSIGAE(422, "Los datos del registro no son válidos. Vuelve a registrarte.", "REGISTRO_INVALIDO")
-    return nombre, matricula
+    return nombre, matricula, sexo
 
 
 @router.post("/registro/confirmar", summary="Confirmar el correo; la cuenta queda pendiente de que el admin la acepte")
@@ -62,15 +63,15 @@ def confirmar(body: ConfirmarCodigo):
         raise _CODIGO_MALO
     usuario, token = datos["user"], datos["access_token"]
     try:
-        nombre, matricula = _datos_validos(usuario)
+        nombre, matricula, sexo = _datos_validos(usuario)
         with conexion_sistema() as conn:
             ya = conn.execute("select rol::text as rol, activo from sigae.usuario where id_auth = %s",
                               (usuario["id"],)).fetchone()
             if ya is None:
                 conn.execute(
-                    """insert into sigae.usuario (id_auth, nombre, correo, rol, matricula, activo)
-                       values (%s, %s, %s, 'Alumno', %s, false)""",
-                    (usuario["id"], nombre, usuario["email"].lower(), matricula),
+                    """insert into sigae.usuario (id_auth, nombre, correo, rol, matricula, sexo, activo)
+                       values (%s, %s, %s, 'Alumno', %s, %s, false)""",
+                    (usuario["id"], nombre, usuario["email"].lower(), matricula, sexo),
                 )
                 ya = {"rol": "Alumno", "activo": False}
     except Exception:

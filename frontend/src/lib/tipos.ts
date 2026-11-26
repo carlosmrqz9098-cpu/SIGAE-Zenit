@@ -6,8 +6,12 @@ export interface Usuario {
   correo: string;
   rol: Rol;
   matricula: string | null;
+  sexo?: Sexo | null;
   es_responsable: boolean;
 }
+
+export type Sexo = "Hombre" | "Mujer";
+export type DirigidaA = "Mixta" | "Varonil" | "Femenil";
 
 export type EstadoActividad = "Borrador" | "Activa" | "Llena" | "Cerrada" | "Inactiva";
 export type EstatusCredito = "Pendiente" | "Acreditado" | "No acreditado";
@@ -28,6 +32,7 @@ export interface ActividadCatalogo {
   estado: EstadoActividad;
   periodo_abierto: boolean;
   ya_inscrito: boolean;
+  dirigida_a?: DirigidaA;
 }
 
 export interface MiInscripcion {

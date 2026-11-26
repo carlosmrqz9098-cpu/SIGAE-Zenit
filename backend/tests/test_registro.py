@@ -21,6 +21,7 @@ BUENO = {
     "apellidos": "Núñez Ruiz",
     "correo": "L21200123@pachuca.tecnm.mx",
     "matricula": "21200123",
+    "sexo": "Mujer",
     "contrasena": "Futbol2026",
 }
 
@@ -108,7 +109,7 @@ def test_registro_manda_codigo(entorno):
     cliente, _, llamadas, _ = entorno
     r = cliente.post("/api/auth/registro", json=BUENO)
     assert r.status_code == 202
-    assert llamadas["registradas"][0][1] == {"nombre": "José Ángel Núñez Ruiz", "rol": "Alumno", "matricula": "21200123"}
+    assert llamadas["registradas"][0][1] == {"nombre": "José Ángel Núñez Ruiz", "rol": "Alumno", "matricula": "21200123", "sexo": "Mujer"}
 
 
 def test_correo_ya_registrado_no_manda_codigo(entorno):
@@ -121,11 +122,11 @@ def test_correo_ya_registrado_no_manda_codigo(entorno):
 
 def test_alumno_confirmado_queda_pendiente_de_aceptar(entorno):
     cliente, conn, llamadas, mp = entorno
-    meta = {"nombre": "José Ángel Núñez Ruiz", "rol": "Alumno", "matricula": "21200123"}
+    meta = {"nombre": "José Ángel Núñez Ruiz", "rol": "Alumno", "matricula": "21200123", "sexo": "Hombre"}
     mp.setattr(registro.supabase, "verificar_codigo", lambda c, k, t: _sesion_con(meta))
     r = cliente.post("/api/auth/registro/confirmar", json={"correo": BUENO["correo"], "codigo": "123456"})
     assert r.status_code == 200 and r.json() == {"rol": "Alumno", "pendiente": True}
-    assert conn.insertados[0][1:] == ("José Ángel Núñez Ruiz", "l21200123@pachuca.tecnm.mx", "21200123")
+    assert conn.insertados[0][1:] == ("José Ángel Núñez Ruiz", "l21200123@pachuca.tecnm.mx", "21200123", "Hombre")
     assert llamadas["cerradas"] == 1
 
 
@@ -182,3 +183,23 @@ def test_alumno_por_aceptar_no_cuenta_como_entrada_exitosa(monkeypatch):
         "/api/auth/login", json={"correo": "l21200123@pachuca.tecnm.mx", "contrasena": "Futbol2026"})
     assert r.status_code == 403 and r.json()["codigo"] == "SGA02"
     assert not any("registrar_intento_acceso" in s for s in sqls)
+
+
+# ------------------------------------------------------------------ sexo
+def test_registro_pide_hombre_o_mujer():
+    sin = {k: v for k, v in BUENO.items() if k != "sexo"}
+    with pytest.raises(ValidationError):
+        Registro(**sin)
+    with pytest.raises(ValidationError):
+        Registro(**{**BUENO, "sexo": "Otro"})
+    assert Registro(**BUENO).sexo == "Mujer"
+
+
+def test_actividad_por_defecto_es_mixta():
+    from app.schemas import ActividadEntrada
+    base = {"id_periodo": 1, "id_aula": 1, "id_responsable": 1, "nombre": "Ajedrez", "dias": "L",
+            "hora_inicio": "10:00", "hora_fin": "11:00", "cupo_maximo": 10}
+    assert ActividadEntrada(**base).dirigida_a == "Mixta"
+    assert ActividadEntrada(**base, dirigida_a="Femenil").dirigida_a == "Femenil"
+    with pytest.raises(ValidationError):
+        ActividadEntrada(**base, dirigida_a="Solo maestros")

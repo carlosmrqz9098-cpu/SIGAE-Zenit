@@ -1,4 +1,5 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
+import { Icono } from "../components/Icono";
 import { CajaError, Cargando, Encabezado, Paginacion, Vacio } from "../components/ui";
 import { fechaHora } from "../lib/formato";
 import { useCarga } from "../lib/useCarga";
@@ -23,14 +24,24 @@ const mostrar = (v: unknown) => (v === null || v === undefined ? "—" : typeof 
 export function Bitacora() {
   const [entidad, setEntidad] = useState("");
   const [pagina, setPagina] = useState(1);
+  const [texto, setTexto] = useState("");
+  const [buscar, setBuscar] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => { setBuscar(texto.trim()); setPagina(1); }, 400);
+    return () => clearTimeout(t);
+  }, [texto]);
   const [abierto, setAbierto] = useState<number | null>(null);
-  const { datos, error, cargando, recargar } = useCarga<Respuesta>(`/api/bitacora?pagina=${pagina}${entidad ? `&entidad=${encodeURIComponent(entidad)}` : ""}`);
+  const { datos, error, cargando, recargar } = useCarga<Respuesta>(`/api/bitacora?pagina=${pagina}${entidad ? `&entidad=${encodeURIComponent(entidad)}` : ""}${buscar ? `&buscar=${encodeURIComponent(buscar)}` : ""}`);
   const paginas = datos ? Math.max(1, Math.ceil(datos.total / datos.por_pagina)) : 1;
 
   return (
     <>
       <Encabezado titulo="Bitácora" texto="Registro de todos los cambios importantes. Nadie lo puede modificar ni borrar." />
       <div className="filtros">
+        <label className="buscador">
+          <Icono nombre="buscar" tam={18} />
+          <input type="search" placeholder="Buscar por persona, número o dato que cambió" value={texto} onChange={(e) => setTexto(e.target.value)} aria-label="Buscar en la bitácora" />
+        </label>
         <select value={entidad} onChange={(e) => { setEntidad(e.target.value); setPagina(1); }} aria-label="Filtrar por tabla">
           <option value="">Todas las tablas</option>
           {datos?.entidades.map((e) => <option key={e}>{e}</option>)}

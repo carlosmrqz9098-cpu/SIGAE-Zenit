@@ -132,7 +132,7 @@ function Entrar({ ir, correoInicial, exito }: { ir: (v: Vista) => void; correoIn
 // ------------------------------------------------------------------ crear cuenta
 function Registrarse({ ir, terminar }: { ir: (v: Vista) => void; terminar: (correo: string, mensaje: string) => void }) {
   const [paso, setPaso] = useState<"datos" | "codigo">("datos");
-  const [d, setD] = useState({ nombres: "", apellidos: "", matricula: "", correo: "", contrasena: "", repetir: "" });
+  const [d, setD] = useState({ nombres: "", apellidos: "", matricula: "", sexo: "", correo: "", contrasena: "", repetir: "" });
   const [errores, setErrores] = useState<Errores>({});
   const [codigo, setCodigo] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -148,6 +148,7 @@ function Registrarse({ ir, terminar }: { ir: (v: Vista) => void; terminar: (corr
       nombres: revisarNombre(d.nombres, "nombres"),
       apellidos: revisarNombre(d.apellidos, "apellidos"),
       matricula: d.matricula.length !== 8 ? "La matrícula son 8 números." : null,
+      sexo: !d.sexo ? "Elige Hombre o Mujer." : null,
       correo: revisarCorreo(d.correo),
       contrasena: revisarContrasena(d.contrasena),
       repetir: d.repetir !== d.contrasena ? "Las contraseñas no coinciden." : null,
@@ -165,7 +166,7 @@ function Registrarse({ ir, terminar }: { ir: (v: Vista) => void; terminar: (corr
       await api("/api/auth/registro", {
         method: "POST", sinSesion: true,
         body: { nombres: d.nombres.trim(), apellidos: d.apellidos.trim(), correo: d.correo.trim(),
-                matricula: d.matricula, contrasena: d.contrasena },
+                matricula: d.matricula, sexo: d.sexo, contrasena: d.contrasena },
       });
       setCodigo("");
       setPaso("codigo");
@@ -234,6 +235,16 @@ function Registrarse({ ir, terminar }: { ir: (v: Vista) => void; terminar: (corr
         <input inputMode="numeric" value={d.matricula}
           onChange={(e) => poner("matricula", soloNumeros(e.target.value, 8))} />
       </Campo>
+      <fieldset className={`campo ${errores.sexo ? "campo-error" : ""}`}>
+        <legend className="campo-etiqueta">Soy</legend>
+        <div className="opciones-seg" role="radiogroup">
+          {(["Hombre", "Mujer"] as const).map((x) => (
+            <button key={x} type="button" role="radio" aria-checked={d.sexo === x} className={d.sexo === x ? "activo" : ""}
+              onClick={() => poner("sexo", x)}>{x}</button>
+          ))}
+        </div>
+        {errores.sexo ? <span className="campo-msg">{errores.sexo}</span> : <span className="campo-ayuda">Algunas actividades son varoniles o femeniles.</span>}
+      </fieldset>
       <Campo etiqueta="Correo institucional" error={errores.correo}>
         <input type="email" autoComplete="email" value={d.correo} placeholder={`tu.correo${DOMINIO}`}
           onChange={(e) => poner("correo", e.target.value.replace(/\s/g, ""))} />

@@ -1,5 +1,5 @@
 import { TiraDias } from "../components/Horario";
-import { CajaError, Cargando, Encabezado, EstadoCredito, Insignia } from "../components/ui";
+import { CajaError, Cargando, Encabezado, EstadoCredito, Importante, Insignia } from "../components/ui";
 import { fecha } from "../lib/formato";
 import { Enlace } from "../lib/router";
 import { useSesion } from "../lib/sesion";
@@ -9,6 +9,7 @@ import { useCarga } from "../lib/useCarga";
 interface Panel {
   periodo: { nombre: string; estado: string; fecha_hora_inicio: string; fecha_hora_fin: string } | null;
   indicadores?: Record<string, number>;
+  por_aceptar?: number;
   proximas?: MiInscripcion[];
   grupos?: Grupo[];
   indicadores_docente?: { grupos: number; alumnos: number; sin_captura: number };
@@ -130,6 +131,11 @@ export function Inicio() {
 
           {(usuario.rol === "Administrador" || usuario.rol === "Personal") && datos.indicadores && (
             <>
+              {!!datos.por_aceptar && (
+                <Importante tono="ambar" titulo={datos.por_aceptar === 1 ? "1 alumno espera que aceptes su cuenta" : `${datos.por_aceptar} alumnos esperan que aceptes su cuenta`}>
+                  Se registraron solos y ya confirmaron su correo. <Enlace a="/usuarios" className="enlace-boton">Revisarlos en Usuarios</Enlace>
+                </Importante>
+              )}
               <section className="cifras">
                 <Cifra valor={datos.indicadores.inscripciones_activas} texto="inscripciones activas" destacar />
                 <Cifra valor={datos.indicadores.actividades_abiertas} texto="actividades abiertas" />

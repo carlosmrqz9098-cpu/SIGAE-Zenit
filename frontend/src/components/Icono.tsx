@@ -31,6 +31,7 @@ const RUTAS: Record<string, string> = {
   recargar: "M4 12a8 8 0 0 1 14-5.3M20 4v5h-5M20 12a8 8 0 0 1-14 5.3M4 20v-5h5",
   ver: "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
   atras: "M15 18l-6-6 6-6",
+  info: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v6M12 7.5v.01",
 };
 
 export function Icono({ nombre, tam = 20, className }: { nombre: string; tam?: number; className?: string }) {

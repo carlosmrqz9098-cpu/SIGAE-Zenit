@@ -8,6 +8,7 @@ interface Ctx {
   aviso: string | null;
   entrar: (correo: string, contrasena: string) => Promise<void>;
   salir: () => Promise<void>;
+  recargarUsuario: () => Promise<void>;
 }
 
 const SesionCtx = createContext<Ctx>(null as unknown as Ctx);
@@ -53,7 +54,11 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
     setUsuario(null);
   }, []);
 
-  return <SesionCtx.Provider value={{ usuario, cargando, aviso, entrar, salir }}>{children}</SesionCtx.Provider>;
+  const recargarUsuario = useCallback(async () => {
+    setUsuario(await api<Usuario>("/api/auth/me"));
+  }, []);
+
+  return <SesionCtx.Provider value={{ usuario, cargando, aviso, entrar, salir, recargarUsuario }}>{children}</SesionCtx.Provider>;
 }
 
 export const useSesion = () => useContext(SesionCtx);

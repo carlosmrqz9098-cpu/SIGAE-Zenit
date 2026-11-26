@@ -1,6 +1,6 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { Icono } from "../components/Icono";
-import { Boton, CajaError, Cargando, Confirmar, Encabezado, useAvisos, Vacio } from "../components/ui";
+import { Boton, CajaError, Cargando, Confirmar, Encabezado, Importante, useAvisos, Vacio } from "../components/ui";
 import { api, ApiError, subirArchivo } from "../lib/api";
 import { fechaHora, tamano } from "../lib/formato";
 import { useCarga } from "../lib/useCarga";
@@ -131,7 +131,7 @@ export function SeccionMateriales({ idActividad, compacta }: { idActividad: numb
         )}
       </div>
       {datos.puede_gestionar && (
-        <p className="texto-suave">Puedes elegir varios archivos a la vez. PDF, Word (.docx), JPG o PNG de hasta {tamano(datos.limite_bytes)} cada uno.</p>
+        <Importante titulo="Archivos que se aceptan">PDF, Word (.docx), JPG o PNG de hasta <strong>{tamano(datos.limite_bytes)}</strong> cada uno. Puedes elegir varios a la vez.</Importante>
       )}
       {cola.length > 0 && (
         <ul className="subida-cola" aria-live="polite">
