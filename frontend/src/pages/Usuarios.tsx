@@ -7,7 +7,7 @@ import { useSesion } from "../lib/sesion";
 import type { Rol } from "../lib/tipos";
 import { useCarga } from "../lib/useCarga";
 
-interface U { id_usuario: number; nombre: string; correo: string; rol: Rol; matricula: string | null; activo: boolean; creado_en: string }
+interface U { id_usuario: number; nombre: string; correo: string; rol: Rol; matricula: string | null; activo: boolean; creado_en: string; pendiente?: boolean }
 const ROLES: Rol[] = ["Alumno", "Docente", "Personal", "Administrador"];
 const NOMBRE_ROL: Record<Rol, string> = {
   Alumno: "Alumno", Docente: "Docente", Personal: "Personal de Extra-Escolares", Administrador: "Administrador",
@@ -19,6 +19,8 @@ export function Usuarios() {
   const { datos, error, cargando, recargar } = useCarga<U[]>("/api/usuarios");
   const [filtro, setFiltro] = useState("");
   const [rol, setRol] = useState("");
+  const [soloPendientes, setSoloPendientes] = useState(false);
+  const [aceptando, setAceptando] = useState<number | null>(null);
   const [editando, setEditando] = useState<U | "nuevo" | null>(null);
   const [form, setForm] = useState({ nombre: "", correo: "", rol: "Alumno" as Rol, matricula: "", contrasena: "", activo: true });
   const [clave, setClave] = useState<U | null>(null);
@@ -27,8 +29,22 @@ export function Usuarios() {
   const [guardando, setGuardando] = useState(false);
   const avisar = useAvisos();
 
-  const lista = useMemo(() => (datos ?? []).filter((u) =>
-    (!rol || u.rol === rol) && (!filtro || `${u.nombre} ${u.correo} ${u.matricula ?? ""}`.toLowerCase().includes(filtro.toLowerCase()))), [datos, filtro, rol]);
+  const pendientes = (datos ?? []).filter((u) => u.pendiente).length;
+  const lista = useMemo(() => (datos ?? []).filter((u) => (!soloPendientes || u.pendiente) &&
+    (!rol || u.rol === rol) && (!filtro || `${u.nombre} ${u.correo} ${u.matricula ?? ""}`.toLowerCase().includes(filtro.toLowerCase()))), [datos, filtro, rol, soloPendientes]);
+
+  async function aceptar(u: U) {
+    setAceptando(u.id_usuario);
+    try {
+      await api(`/api/usuarios/${u.id_usuario}`, { method: "PUT", body: { nombre: u.nombre, rol: u.rol, matricula: u.matricula, activo: true } });
+      avisar(`Se aceptó a ${u.nombre}. Ya puede iniciar sesión.`);
+      recargar();
+    } catch (err) {
+      avisar((err as ApiError).message, "error");
+    } finally {
+      setAceptando(null);
+    }
+  }
   const pag = usePaginas(lista, 10);
 
   function abrir(u: U | "nuevo") {
@@ -87,6 +103,15 @@ export function Usuarios() {
     <>
       <Encabezado titulo="Usuarios" texto={esAdmin ? "Registra cuentas, asigna roles y desactiva accesos." : "Consulta de las personas registradas."}
         acciones={esAdmin && <Boton icono="mas" onClick={() => abrir("nuevo")}>Nuevo usuario</Boton>} />
+      {pendientes > 0 && (
+        <div className="aviso-pendientes" role="status">
+          <Icono nombre="persona" tam={20} />
+          <span><strong>{pendientes === 1 ? "1 alumno espera" : `${pendientes} alumnos esperan`}</strong> que aceptes su cuenta. Revisa que su nombre y matrícula sean reales antes de aceptar.</span>
+          <Boton variante="secundario" className="btn-chico" onClick={() => setSoloPendientes(!soloPendientes)}>
+            {soloPendientes ? "Ver a todos" : "Ver solo pendientes"}
+          </Boton>
+        </div>
+      )}
       <div className="filtros">
         <label className="buscador">
           <Icono nombre="buscar" tam={18} />
@@ -111,9 +136,15 @@ export function Usuarios() {
                   <td data-col="Rol">{NOMBRE_ROL[u.rol] ?? u.rol}</td>
                   <td data-col="Matrícula">{u.matricula ?? "—"}</td>
                   <td data-col="Alta">{fecha(u.creado_en)}</td>
-                  <td data-col="Acceso"><span className={`insignia insignia-${u.activo ? "verde" : "rojo"}`}>{u.activo ? "Activo" : "Desactivado"}</span></td>
+                  <td data-col="Acceso">{u.pendiente
+                    ? <span className="insignia insignia-amarillo" title="Se registró solo y confirmó su correo; falta que el admin lo acepte.">Por aceptar</span>
+                    : <span className={`insignia insignia-${u.activo ? "verde" : "rojo"}`}>{u.activo ? "Activo" : "Desactivado"}</span>}</td>
                   {esAdmin && (
                     <td className="acciones-fila">
+                      {u.pendiente && (
+                        <button className="icono-btn con-texto exito" onClick={() => aceptar(u)} disabled={aceptando === u.id_usuario}
+                          aria-label={`Aceptar a ${u.nombre}`} title="Aceptar su cuenta"><Icono nombre="check" tam={18} /><span>Aceptar</span></button>
+                      )}
                       <button className="icono-btn con-texto editar" onClick={() => abrir(u)} aria-label={`Editar ${u.nombre}`} title="Editar"><Icono nombre="editar" tam={18} /><span>Editar</span></button>
                       <button className="icono-btn con-texto cuidado" onClick={() => { setErrorForm(null); setNuevaClave(""); setClave(u); }} aria-label={`Nueva contraseña para ${u.nombre}`} title="Asignar contraseña"><Icono nombre="bloquear" tam={18} /><span>Contraseña</span></button>
                     </td>

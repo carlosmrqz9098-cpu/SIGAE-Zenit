@@ -50,7 +50,7 @@ def login(body: Login):
     usuario = cargar_usuario(datos["user"]["id"])
     if usuario is None:
         supabase.cerrar_sesion(datos["access_token"])
-        raise ErrorSIGAE(403, "Tu cuenta no está activa. Si te registraste como docente, Servicios Extra-Escolares debe activarla primero.", "SGA02")
+        raise ErrorSIGAE(403, "Tu cuenta no está activa. Si te acabas de registrar, Servicios Extra-Escolares debe aceptarla primero.", "SGA02")
     return {"sesion": _sesion(datos), "usuario": _publico(usuario)}
 
 
