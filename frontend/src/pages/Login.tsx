@@ -56,7 +56,7 @@ function Mensaje({ tipo = "error", children }: { tipo?: "error" | "aviso" | "exi
 function CampoCodigo({ valor, cambiar, error }: { valor: string; cambiar: (v: string) => void; error?: string | null }) {
   return (
     <Campo etiqueta="Código de 6 números" error={error} ayuda="Revisa tu bandeja de entrada y la carpeta de spam.">
-      <input className="campo-codigo" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={valor}
+      <input className="campo-codigo" inputMode="numeric" autoComplete="one-time-code" value={valor}
         onChange={(e) => cambiar(soloNumeros(e.target.value, 6))} placeholder="000000" autoFocus />
     </Campo>
   );
@@ -250,7 +250,7 @@ function Registrarse({ ir, terminar }: { ir: (v: Vista) => void; terminar: (corr
       </div>
       {rol === "Alumno" && (
         <Campo etiqueta="Matrícula" error={errores.matricula} ayuda="Son 8 números, por ejemplo 21200123.">
-          <input inputMode="numeric" value={d.matricula} maxLength={8}
+          <input inputMode="numeric" value={d.matricula}
             onChange={(e) => poner("matricula", soloNumeros(e.target.value, 8))} />
         </Campo>
       )}
