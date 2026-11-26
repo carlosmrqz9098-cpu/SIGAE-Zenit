@@ -185,9 +185,9 @@ export function Actividades() {
           <fieldset className="campo">
             <legend className="campo-etiqueta">¿Para quién es? *</legend>
             <div className="opciones-seg" role="radiogroup">
-              {([["Mixta", "Mixta (todos)"], ["Varonil", "Varonil (solo hombres)"], ["Femenil", "Femenil (solo mujeres)"]] as const).map(([v, t]) => (
+              {([["Mixta", "todos"], ["Varonil", "solo hombres"], ["Femenil", "solo mujeres"]] as const).map(([v, t]) => (
                 <button key={v} type="button" role="radio" aria-checked={form.dirigida_a === v} className={form.dirigida_a === v ? "activo" : ""}
-                  onClick={() => setForm((f) => ({ ...f, dirigida_a: v }))}>{t}</button>
+                  onClick={() => setForm((f) => ({ ...f, dirigida_a: v }))}><span>{v}</span><small>{t}</small></button>
               ))}
             </div>
             <span className="campo-ayuda">En varonil y femenil, el sistema solo deja inscribirse a hombres o a mujeres.</span>
