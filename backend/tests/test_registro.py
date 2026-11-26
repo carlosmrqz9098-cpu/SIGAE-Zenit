@@ -151,3 +151,34 @@ def test_recuperar_responde_igual_exista_o_no_el_correo(entorno):
     cliente, *_ = entorno
     r = cliente.post("/api/auth/recuperar", json={"correo": "nadie@pachuca.tecnm.mx"})
     assert r.status_code == 202 and "Si ese correo tiene cuenta" in r.json()["mensaje"]
+
+
+# ------------------------------------------------------------------ login de un alumno por aceptar
+def test_alumno_por_aceptar_no_cuenta_como_entrada_exitosa(monkeypatch):
+    """Si la contraseña es correcta pero el admin aún no lo acepta, no debe quedar como
+    "ya entró"; si no, dejaría de aparecer como "Por aceptar" en Usuarios."""
+    from app.routers import sesion
+
+    sqls = []
+
+    class _Conn:
+        def execute(self, sql, params=()):
+            sqls.append(sql)
+            return _Resultado([{"b": False}])
+
+    @contextmanager
+    def conexion():
+        yield _Conn()
+
+    monkeypatch.setattr(sesion, "conexion_sistema", conexion)
+    monkeypatch.setattr(sesion.supabase, "iniciar_sesion", lambda c, p: {"access_token": "t", "refresh_token": "r", "user": {"id": "u"}})
+    monkeypatch.setattr(sesion.supabase, "cerrar_sesion", lambda t: None)
+    monkeypatch.setattr(sesion, "cargar_usuario", lambda i: None)
+
+    app = FastAPI()
+    registrar_manejadores(app)
+    app.include_router(sesion.router)
+    r = TestClient(app, raise_server_exceptions=False).post(
+        "/api/auth/login", json={"correo": "l21200123@pachuca.tecnm.mx", "contrasena": "Futbol2026"})
+    assert r.status_code == 403 and r.json()["codigo"] == "SGA02"
+    assert not any("registrar_intento_acceso" in s for s in sqls)

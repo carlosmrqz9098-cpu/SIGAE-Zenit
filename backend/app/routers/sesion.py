@@ -38,19 +38,23 @@ def login(body: Login):
         raise ErrorSIGAE(423, "Cuenta bloqueada por 5 intentos fallidos. Espera 15 minutos e intenta de nuevo.", "CUENTA_BLOQUEADA")
 
     datos = supabase.iniciar_sesion(correo, body.contrasena)
-    with conexion_sistema() as conn:
-        quedo_bloqueada = conn.execute(
-            "select sigae.registrar_intento_acceso(%s, %s) as b", (correo, datos is not None)
-        ).fetchone()["b"]
     if datos is None:
+        with conexion_sistema() as conn:
+            quedo_bloqueada = conn.execute(
+                "select sigae.registrar_intento_acceso(%s, false) as b", (correo,)
+            ).fetchone()["b"]
         if quedo_bloqueada:
             raise ErrorSIGAE(423, "Cuenta bloqueada por 5 intentos fallidos. Espera 15 minutos e intenta de nuevo.", "CUENTA_BLOQUEADA")
         raise ErrorSIGAE(401, "Correo o contraseña incorrectos", "CREDENCIALES")
 
     usuario = cargar_usuario(datos["user"]["id"])
     if usuario is None:
+        # Contraseña correcta pero la cuenta no está activa (p. ej. alumno que el admin aún no acepta).
+        # No se registra como entrada exitosa: así sigue apareciendo "Por aceptar" en Usuarios.
         supabase.cerrar_sesion(datos["access_token"])
         raise ErrorSIGAE(403, "Tu cuenta no está activa. Si te acabas de registrar, Servicios Extra-Escolares debe aceptarla primero.", "SGA02")
+    with conexion_sistema() as conn:
+        conn.execute("select sigae.registrar_intento_acceso(%s, true)", (correo,))
     return {"sesion": _sesion(datos), "usuario": _publico(usuario)}
 
 
