@@ -2,7 +2,8 @@
 
 Supabase y la base se reemplazan por funciones falsas para revisar las reglas:
 solo correos del Tec, solo letras en el nombre, matrícula de 8 números, nadie se
-pone otro rol, el docente queda pendiente y los códigos malos se rechazan.
+pone otro rol (solo alumnos), la cuenta queda pendiente hasta que el admin la acepte
+y los códigos malos se rechazan.
 """
 from contextlib import contextmanager
 
@@ -19,7 +20,6 @@ BUENO = {
     "nombres": "José Ángel",
     "apellidos": "Núñez Ruiz",
     "correo": "L21200123@pachuca.tecnm.mx",
-    "rol": "Alumno",
     "matricula": "21200123",
     "contrasena": "Futbol2026",
 }
@@ -38,19 +38,14 @@ def test_registro_correcto_se_acepta():
     ({"correo": "juan@gmail.com"}, "pachuca.tecnm.mx"),
     ({"matricula": "2120012"}, "8 números"),
     ({"matricula": "C2120012"}, "8 números"),
-    ({"matricula": None}, "8 números"),
+    ({"matricula": "abcdefgh"}, "8 números"),
     ({"contrasena": "soloLetras"}, "una letra y un número"),
     ({"contrasena": "12345678"}, "una letra y un número"),
     ({"contrasena": "a1"}, "at least 8"),
-    ({"rol": "Administrador"}, "Alumno"),
 ])
 def test_registro_con_datos_malos_se_rechaza(cambio, mensaje):
     with pytest.raises(ValidationError, match=mensaje):
         Registro(**{**BUENO, **cambio})
-
-
-def test_docente_no_lleva_matricula():
-    assert Registro(**{**BUENO, "rol": "Docente", "matricula": "lo que sea"}).matricula is None
 
 
 def test_codigo_debe_ser_de_6_numeros():
@@ -124,28 +119,20 @@ def test_correo_ya_registrado_no_manda_codigo(entorno):
     assert llamadas["registradas"] == []
 
 
-def test_alumno_confirmado_queda_activo(entorno):
+def test_alumno_confirmado_queda_pendiente_de_aceptar(entorno):
     cliente, conn, llamadas, mp = entorno
     meta = {"nombre": "José Ángel Núñez Ruiz", "rol": "Alumno", "matricula": "21200123"}
     mp.setattr(registro.supabase, "verificar_codigo", lambda c, k, t: _sesion_con(meta))
     r = cliente.post("/api/auth/registro/confirmar", json={"correo": BUENO["correo"], "codigo": "123456"})
-    assert r.status_code == 200 and r.json() == {"rol": "Alumno", "pendiente": False}
-    assert conn.insertados[0][3:] == ("Alumno", "21200123", True)
+    assert r.status_code == 200 and r.json() == {"rol": "Alumno", "pendiente": True}
+    assert conn.insertados[0][1:] == ("José Ángel Núñez Ruiz", "l21200123@pachuca.tecnm.mx", "21200123")
     assert llamadas["cerradas"] == 1
 
 
-def test_docente_confirmado_queda_pendiente(entorno):
-    cliente, conn, _, mp = entorno
-    meta = {"nombre": "Laura Ruiz", "rol": "Docente", "matricula": None}
-    mp.setattr(registro.supabase, "verificar_codigo", lambda c, k, t: _sesion_con(meta, "laura.ruiz@pachuca.tecnm.mx"))
-    r = cliente.post("/api/auth/registro/confirmar", json={"correo": "laura.ruiz@pachuca.tecnm.mx", "codigo": "123456"})
-    assert r.json() == {"rol": "Docente", "pendiente": True}
-    assert conn.insertados[0][3:] == ("Docente", None, False)
-
-
-def test_nadie_se_registra_como_administrador(entorno):
+@pytest.mark.parametrize("rol", ["Docente", "Administrador", "Personal"])
+def test_nadie_se_registra_con_otro_rol(entorno, rol):
     cliente, conn, llamadas, mp = entorno
-    meta = {"nombre": "Hacker", "rol": "Administrador", "matricula": None}
+    meta = {"nombre": "Laura Ruiz", "rol": rol, "matricula": None}
     mp.setattr(registro.supabase, "verificar_codigo", lambda c, k, t: _sesion_con(meta))
     r = cliente.post("/api/auth/registro/confirmar", json={"correo": BUENO["correo"], "codigo": "123456"})
     assert r.status_code == 422

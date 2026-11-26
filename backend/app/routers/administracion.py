@@ -9,7 +9,7 @@ Permisos (se revisan aquí Y en la base de datos con RLS):
 from fastapi import APIRouter, Depends, Query
 
 from app.core import supabase
-from app.core.database import conexion_usuario
+from app.core.database import conexion_sistema, conexion_usuario
 from app.core.errores import ErrorSIGAE
 from app.core.seguridad import ADMIN, PERSONAL, UsuarioActual, requiere_rol
 from app.schemas import (
@@ -192,10 +192,19 @@ def borrar_actividad(id_actividad: int, u: UsuarioActual = Depends(admin_o_perso
 @router.get("/usuarios", summary="Lista de usuarios")
 def usuarios(u: UsuarioActual = Depends(admin_o_personal)):
     with conexion_usuario(u.id_auth) as conn:
-        return conn.execute(
+        filas = conn.execute(
             """select id_usuario, nombre, correo, rol::text as rol, matricula, activo, creado_en
                  from sigae.usuario order by activo desc, rol, nombre"""
         ).fetchall()
+    # "pendiente" = alumno que se registró solo y el admin aún no acepta (nunca ha entrado).
+    # Los intentos de acceso solo los lee el sistema, por eso va en otra consulta.
+    with conexion_sistema() as conn:
+        han_entrado = {r["c"] for r in conn.execute(
+            "select distinct lower(correo) as c from sigae.intento_acceso where exitoso").fetchall()}
+    for f in filas:
+        f["pendiente"] = not f["activo"] and f["rol"] == "Alumno" and f["correo"].lower() not in han_entrado
+    filas.sort(key=lambda f: not f["pendiente"])  # primero los que esperan ser aceptados
+    return filas
 
 
 @router.post("/usuarios", status_code=201, summary="Registrar usuario (crea su cuenta de acceso)")

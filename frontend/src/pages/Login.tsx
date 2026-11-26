@@ -131,9 +131,7 @@ function Entrar({ ir, correoInicial, exito }: { ir: (v: Vista) => void; correoIn
 
 // ------------------------------------------------------------------ crear cuenta
 function Registrarse({ ir, terminar }: { ir: (v: Vista) => void; terminar: (correo: string, mensaje: string) => void }) {
-  const { entrar } = useSesion();
   const [paso, setPaso] = useState<"datos" | "codigo">("datos");
-  const [rol, setRol] = useState<"Alumno" | "Docente">("Alumno");
   const [d, setD] = useState({ nombres: "", apellidos: "", matricula: "", correo: "", contrasena: "", repetir: "" });
   const [errores, setErrores] = useState<Errores>({});
   const [codigo, setCodigo] = useState("");
@@ -149,7 +147,7 @@ function Registrarse({ ir, terminar }: { ir: (v: Vista) => void; terminar: (corr
     const e: Errores = {
       nombres: revisarNombre(d.nombres, "nombres"),
       apellidos: revisarNombre(d.apellidos, "apellidos"),
-      matricula: rol === "Alumno" && d.matricula.length !== 8 ? "La matrícula son 8 números." : null,
+      matricula: d.matricula.length !== 8 ? "La matrícula son 8 números." : null,
       correo: revisarCorreo(d.correo),
       contrasena: revisarContrasena(d.contrasena),
       repetir: d.repetir !== d.contrasena ? "Las contraseñas no coinciden." : null,
@@ -166,8 +164,8 @@ function Registrarse({ ir, terminar }: { ir: (v: Vista) => void; terminar: (corr
     try {
       await api("/api/auth/registro", {
         method: "POST", sinSesion: true,
-        body: { nombres: d.nombres.trim(), apellidos: d.apellidos.trim(), correo: d.correo.trim(), rol,
-                matricula: rol === "Alumno" ? d.matricula : null, contrasena: d.contrasena },
+        body: { nombres: d.nombres.trim(), apellidos: d.apellidos.trim(), correo: d.correo.trim(),
+                matricula: d.matricula, contrasena: d.contrasena },
       });
       setCodigo("");
       setPaso("codigo");
@@ -187,14 +185,10 @@ function Registrarse({ ir, terminar }: { ir: (v: Vista) => void; terminar: (corr
     }
     setEnviando(true);
     try {
-      const r = await api<{ rol: string; pendiente: boolean }>("/api/auth/registro/confirmar", {
+      await api("/api/auth/registro/confirmar", {
         method: "POST", sinSesion: true, body: { correo: d.correo.trim(), codigo },
       });
-      if (r.pendiente) {
-        terminar(d.correo.trim(), "Tu correo quedó confirmado. Como te registraste como docente, Servicios Extra-Escolares debe activar tu cuenta antes de que puedas entrar.");
-      } else {
-        await entrar(d.correo.trim(), d.contrasena);
-      }
+      terminar(d.correo.trim(), "Listo, tu correo quedó confirmado. Ahora Servicios Extra-Escolares debe aceptar tu cuenta; en cuanto lo haga podrás entrar con tu correo y contraseña.");
     } catch (err) {
       setError((err as ApiError).message);
     } finally {
@@ -209,7 +203,7 @@ function Registrarse({ ir, terminar }: { ir: (v: Vista) => void; terminar: (corr
         <p className="login-sub">Te mandamos un código de 6 números a <strong>{d.correo.trim().toLowerCase()}</strong>.</p>
         {error && <Mensaje>{error}</Mensaje>}
         <CampoCodigo valor={codigo} cambiar={setCodigo} />
-        <Boton type="submit" cargando={enviando} className="btn-ancho">Confirmar y crear cuenta</Boton>
+        <Boton type="submit" cargando={enviando} className="btn-ancho">Confirmar mi correo</Boton>
         <div className="login-acciones">
           <button type="button" className="login-enlace" onClick={() => { setPaso("datos"); setError(null); }}>Cambiar mis datos</button>
           <Reenviar enviar={async () => {
@@ -223,21 +217,9 @@ function Registrarse({ ir, terminar }: { ir: (v: Vista) => void; terminar: (corr
 
   return (
     <form className="login-form" onSubmit={mandarDatos} noValidate>
-      <h1>Crear cuenta</h1>
-      <p className="login-sub">Solo para alumnos y docentes del ITP, con correo institucional.</p>
+      <h1>Crear cuenta de alumno</h1>
+      <p className="login-sub">Para alumnos del ITP. Después de confirmar tu correo, Servicios Extra-Escolares acepta tu cuenta. Si eres docente, pide tu cuenta a Servicios Extra-Escolares.</p>
       {error && <Mensaje>{error}</Mensaje>}
-      <fieldset className="campo">
-        <legend className="campo-etiqueta">Soy</legend>
-        <div className="login-rol" role="radiogroup">
-          {(["Alumno", "Docente"] as const).map((r) => (
-            <button key={r} type="button" role="radio" aria-checked={rol === r} className={rol === r ? "activo" : ""}
-              onClick={() => setRol(r)}>
-              <Icono nombre={r === "Alumno" ? "persona" : "grupos"} tam={18} />{r}
-            </button>
-          ))}
-        </div>
-        {rol === "Docente" && <span className="campo-ayuda">Tu cuenta quedará pendiente hasta que Servicios Extra-Escolares la active.</span>}
-      </fieldset>
       <div className="login-dos">
         <Campo etiqueta="Nombre(s)" error={errores.nombres}>
           <input autoComplete="given-name" value={d.nombres} maxLength={70}
@@ -248,12 +230,10 @@ function Registrarse({ ir, terminar }: { ir: (v: Vista) => void; terminar: (corr
             onChange={(e) => poner("apellidos", soloLetras(e.target.value))} />
         </Campo>
       </div>
-      {rol === "Alumno" && (
-        <Campo etiqueta="Matrícula" error={errores.matricula} ayuda="Son 8 números, por ejemplo 21200123.">
-          <input inputMode="numeric" value={d.matricula}
-            onChange={(e) => poner("matricula", soloNumeros(e.target.value, 8))} />
-        </Campo>
-      )}
+      <Campo etiqueta="Matrícula" error={errores.matricula} ayuda="Son 8 números, por ejemplo 21200123.">
+        <input inputMode="numeric" value={d.matricula}
+          onChange={(e) => poner("matricula", soloNumeros(e.target.value, 8))} />
+      </Campo>
       <Campo etiqueta="Correo institucional" error={errores.correo}>
         <input type="email" autoComplete="email" value={d.correo} placeholder={`tu.correo${DOMINIO}`}
           onChange={(e) => poner("correo", e.target.value.replace(/\s/g, ""))} />

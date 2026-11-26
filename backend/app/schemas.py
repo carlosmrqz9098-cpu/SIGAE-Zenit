@@ -202,22 +202,22 @@ ContrasenaSegura = Annotated[str, Field(min_length=8, max_length=72), AfterValid
 Codigo = Annotated[str, Field(max_length=10), AfterValidator(_codigo)]
 
 
+def _matricula_alumno(v: str) -> str:
+    if not _PATRON_MATRICULA.match(v):
+        raise ValueError("La matrícula son 8 números, por ejemplo 21200123")
+    return v
+
+
+Matricula = Annotated[str, Field(max_length=20), AfterValidator(_matricula_alumno)]
+
+
 class Registro(_Base):
+    """Solo alumnos se registran solos; a los docentes los da de alta el admin."""
     nombres: Nombres
     apellidos: Nombres
     correo: CorreoITP
-    rol: Literal["Alumno", "Docente"]
-    matricula: str | None = Field(default=None, max_length=20)
+    matricula: Matricula
     contrasena: ContrasenaSegura
-
-    @model_validator(mode="after")
-    def _matricula(self):
-        if self.rol == "Alumno":
-            if not self.matricula or not _PATRON_MATRICULA.match(self.matricula):
-                raise ValueError("La matrícula son 8 números, por ejemplo 21200123")
-        else:
-            self.matricula = None
-        return self
 
     @property
     def nombre_completo(self) -> str:
