@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { TiraDias } from "../components/Horario";
 import { Icono } from "../components/Icono";
-import { Boton, CajaError, Cargando, Confirmar, Encabezado, EstadoCredito, useAvisos, Vacio } from "../components/ui";
+import { Boton, CajaError, Cargando, Confirmar, Encabezado, EstadoCredito, Importante, useAvisos, Vacio } from "../components/ui";
 import { api, ApiError } from "../lib/api";
 import { Enlace } from "../lib/router";
 import type { MiInscripcion } from "../lib/tipos";
@@ -70,7 +70,8 @@ export function MisInscripciones() {
 
   return (
     <>
-      <Encabezado titulo="Mis inscripciones" texto="Tu crédito se acredita solo cuando cumples la asistencia mínima y entregas tu evidencia." />
+      <Encabezado titulo="Mis inscripciones" />
+      <Importante titulo="Para ganar tu crédito">Cumple la <strong>asistencia mínima</strong> y entrega tu <strong>evidencia</strong> al responsable. El sistema lo marca solo.</Importante>
       {cargando && !datos && <Cargando />}
       {error && <CajaError mensaje={error} reintentar={recargar} />}
       {datos && datos.length === 0 && (

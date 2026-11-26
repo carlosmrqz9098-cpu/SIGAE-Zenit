@@ -17,6 +17,7 @@ def _publico(u: UsuarioActual) -> dict:
         "correo": u.correo,
         "rol": u.rol,
         "matricula": u.matricula,
+        "sexo": u.sexo,
         "es_responsable": u.es_responsable,
     }
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { TiraDias } from "../components/Horario";
-import { Boton, CajaError, Cargando, Encabezado, EstadoCredito, Insignia, useAvisos, Vacio } from "../components/ui";
+import { Boton, CajaError, Cargando, DirigidaInsignia, Encabezado, EstadoCredito, Importante, Insignia, useAvisos, Vacio } from "../components/ui";
 import { api, ApiError } from "../lib/api";
 import { fechaHora } from "../lib/formato";
 import { Enlace } from "../lib/router";
@@ -22,7 +22,7 @@ interface Respuesta {
   actividad: {
     nombre: string; descripcion: string | null; dias: string; hora_inicio: string; hora_fin: string;
     cupo_maximo: number; estado: string; aula: string; periodo: string; responsable: string | null;
-    asistencia_minima: string | null;
+    asistencia_minima: string | null; dirigida_a?: string;
   };
   lista: Alumno[];
 }
@@ -151,11 +151,13 @@ export function Grupo({ params }: { params: Record<string, string> }) {
       {datos && (
         <>
           <Encabezado titulo={datos.actividad.nombre} texto={`${datos.actividad.periodo} · ${datos.actividad.aula}${datos.actividad.responsable ? ` · ${datos.actividad.responsable}` : ""}`}
-            acciones={<Insignia valor={datos.actividad.estado} />} />
+            acciones={<><DirigidaInsignia valor={datos.actividad.dirigida_a} /><Insignia valor={datos.actividad.estado} /></>} />
           <div className="ficha">
             <TiraDias dias={datos.actividad.dias} inicio={datos.actividad.hora_inicio} fin={datos.actividad.hora_fin} />
-            <p>Para acreditar: <strong>{datos.actividad.asistencia_minima ?? "80"}%</strong> de asistencia y evidencia entregada. El estatus lo calcula el sistema: si cumple queda <strong>Acreditado</strong> y si no, <strong>No acreditado</strong>.</p>
           </div>
+          <Importante titulo="Cómo se acredita">
+            Necesita <strong>{datos.actividad.asistencia_minima ?? "80"}% de asistencia</strong> y la <strong>evidencia entregada</strong>. Tú capturas los datos y das clic en Guardar; el sistema decide solo si queda <strong>Acreditado</strong> o <strong>No acreditado</strong>.
+          </Importante>
 
           <section className="bloque">
             <div className="bloque-cabeza">

@@ -81,6 +81,25 @@ export function Insignia({ valor }: { valor: string | null | undefined }) {
 }
 
 
+/** Para quién es la actividad. Las mixtas no llevan insignia para no llenar de ruido. */
+export function DirigidaInsignia({ valor }: { valor?: string | null }) {
+  if (!valor || valor === "Mixta") return null;
+  return (
+    <span className={`insignia insignia-${valor === "Femenil" ? "morado" : "azul"}`}
+      title={valor === "Femenil" ? "Solo pueden inscribirse mujeres" : "Solo pueden inscribirse hombres"}>{valor}</span>
+  );
+}
+
+/** Instrucción importante: se ve distinta del texto normal para que no se pase de largo. */
+export function Importante({ titulo, children, tono = "azul" }: { titulo?: string; children: ReactNode; tono?: "azul" | "ambar" | "verde" }) {
+  return (
+    <div className={`importante importante-${tono}`} role="note">
+      <Icono nombre={tono === "ambar" ? "alerta" : tono === "verde" ? "check" : "info"} tam={20} />
+      <div>{titulo && <strong>{titulo}</strong>}<div>{children}</div></div>
+    </div>
+  );
+}
+
 // ------------------------------------------------------------------ Estado del crédito (grande y claro)
 const CREDITO: Record<string, { tono: string; icono: string; alumno: string; otros: string }> = {
   Acreditado: { tono: "verde", icono: "check", alumno: "¡Ya tienes tu crédito!", otros: "Cumplió asistencia y evidencia" },

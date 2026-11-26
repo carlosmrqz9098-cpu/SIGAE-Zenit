@@ -1,7 +1,7 @@
 """Panel de inicio: indicadores reales según el rol (nada inventado)."""
 from fastapi import APIRouter, Depends
 
-from app.core.database import conexion_usuario
+from app.core.database import conexion_sistema, conexion_usuario
 from app.core.seguridad import ADMIN, ALUMNO, DOCENTE, PERSONAL, UsuarioActual, get_usuario_actual
 
 router = APIRouter(prefix="/api", tags=["Panel"])
@@ -67,4 +67,13 @@ def panel(u: UsuarioActual = Depends(get_usuario_actual)):
                     where a.estado <> 'Inactiva'
                     order by p.fecha_hora_inicio desc, a.nombre limit 8"""
             ).fetchall()
+    if u.rol in (ADMIN, PERSONAL):
+        # Alumnos que se registraron solos y esperan ser aceptados (los intentos de acceso solo los lee el sistema)
+        with conexion_sistema() as conn:
+            datos["por_aceptar"] = conn.execute(
+                """select count(*) as n from sigae.usuario us
+                    where not us.activo and us.rol = 'Alumno'
+                      and not exists (select 1 from sigae.intento_acceso t
+                                       where lower(t.correo) = lower(us.correo) and t.exitoso)"""
+            ).fetchone()["n"]
     return datos

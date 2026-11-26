@@ -19,7 +19,9 @@ export function Aulas() {
   const [borrando, setBorrando] = useState(false);
   const avisar = useAvisos();
   const [faltan, setFaltan] = useState<Record<string, string>>({});
-  const pag = usePaginas(datos ?? [], 10);
+  const [filtro, setFiltro] = useState("");
+  const lista = (datos ?? []).filter((a) => !filtro || `${a.nombre} ${a.ubicacion ?? ""}`.toLowerCase().includes(filtro.toLowerCase()));
+  const pag = usePaginas(lista, 10);
 
   function abrir(a: Aula | "nueva") {
     setErrorForm(null);
@@ -71,10 +73,19 @@ export function Aulas() {
     <>
       <Encabezado titulo="Aulas y espacios" texto="Lugares donde se imparten las actividades."
         acciones={esAdmin && <Boton icono="mas" onClick={() => abrir("nueva")}>Nueva aula</Boton>} />
+      {datos && datos.length > 0 && (
+        <div className="filtros">
+          <label className="buscador">
+            <Icono nombre="buscar" tam={18} />
+            <input type="search" placeholder="Buscar aula o ubicación" value={filtro} onChange={(e) => setFiltro(e.target.value)} aria-label="Buscar aulas" />
+          </label>
+        </div>
+      )}
       {cargando && !datos && <Cargando />}
       {error && <CajaError mensaje={error} reintentar={recargar} />}
       {datos && datos.length === 0 && <Vacio titulo="No hay aulas registradas" />}
-      {datos && datos.length > 0 && (
+      {datos && datos.length > 0 && lista.length === 0 && <Vacio titulo="Ninguna aula coincide" texto="Cambia la búsqueda." />}
+      {lista.length > 0 && (
         <div className="tabla-envoltura">
           <table className="tabla">
             <thead><tr><th scope="col">Aula</th><th scope="col">Ubicación</th><th scope="col">Capacidad</th><th scope="col">Actividades</th>{esAdmin && <th scope="col"><span className="sr">Acciones</span></th>}</tr></thead>
@@ -97,7 +108,7 @@ export function Aulas() {
           </table>
         </div>
       )}
-      {datos && datos.length > 0 && <Paginacion {...pag} />}
+      {lista.length > 0 && <Paginacion {...pag} />}
 
       <Modal titulo={editando === "nueva" ? "Nueva aula" : "Editar aula"} abierto={!!editando} alCerrar={() => setEditando(null)}
         pie={<><Boton variante="fantasma" onClick={() => setEditando(null)} disabled={guardando}>Cancelar</Boton><Boton type="submit" form="form-aula" cargando={guardando}>Guardar</Boton></>}>

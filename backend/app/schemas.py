@@ -21,6 +21,8 @@ def _correo(v: str) -> str:
 Correo = Annotated[str, Field(max_length=150), AfterValidator(_correo)]
 
 Rol = Literal["Administrador", "Personal", "Docente", "Alumno"]
+Sexo = Literal["Hombre", "Mujer"]
+DirigidaA = Literal["Mixta", "Varonil", "Femenil"]
 
 
 class _Base(BaseModel):
@@ -68,6 +70,7 @@ class ActividadEntrada(_Base):
     hora_inicio: time
     hora_fin: time
     cupo_maximo: int = Field(gt=0, le=10000)
+    dirigida_a: DirigidaA = "Mixta"
 
     @model_validator(mode="after")
     def _horas(self):
@@ -82,6 +85,7 @@ class UsuarioNuevo(_Base):
     correo: Correo
     rol: Rol
     matricula: str | None = Field(default=None, max_length=20)
+    sexo: Sexo | None = None
     contrasena: str = Field(min_length=8, max_length=72)
 
     @model_validator(mode="after")
@@ -89,6 +93,7 @@ class UsuarioNuevo(_Base):
         if self.rol == "Alumno" and not self.matricula:
             raise ValueError("Los alumnos necesitan matrícula")
         if self.rol != "Alumno":
+            self.sexo = None
             self.matricula = None
         return self
 
@@ -97,6 +102,7 @@ class UsuarioCambios(_Base):
     nombre: str = Field(min_length=1, max_length=150)
     rol: Rol
     matricula: str | None = Field(default=None, max_length=20)
+    sexo: Sexo | None = None
     activo: bool
 
     @model_validator(mode="after")
@@ -217,6 +223,7 @@ class Registro(_Base):
     apellidos: Nombres
     correo: CorreoITP
     matricula: Matricula
+    sexo: Sexo
     contrasena: ContrasenaSegura
 
     @property
@@ -237,3 +244,7 @@ class NuevaContrasenaConCodigo(_Base):
     correo: Correo
     codigo: Codigo
     contrasena: ContrasenaSegura
+
+
+class MiSexo(_Base):
+    sexo: Sexo

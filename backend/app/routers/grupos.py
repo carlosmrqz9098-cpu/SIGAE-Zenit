@@ -30,7 +30,7 @@ def grupo(id_actividad: int, usuario: UsuarioActual = Depends(get_usuario_actual
         actividad = conn.execute(
             """
             select a.id_actividad, a.nombre, a.descripcion, a.dias, a.hora_inicio, a.hora_fin,
-                   a.cupo_maximo, a.estado::text as estado, au.nombre as aula, p.nombre as periodo,
+                   a.cupo_maximo, a.dirigida_a, a.estado::text as estado, au.nombre as aula, p.nombre as periodo,
                    p.estado::text as estado_periodo, r.nombre as responsable,
                    (select ps.valor from sigae.parametro_sistema ps
                      where ps.clave = 'asistencia_minima') as asistencia_minima

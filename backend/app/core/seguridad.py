@@ -37,6 +37,7 @@ class UsuarioActual:
     matricula: str | None
     activo: bool
     es_responsable: bool
+    sexo: str | None = None
 
 
 def _no_autorizado(detalle: str = "Inicia sesión para continuar") -> ErrorSIGAE:
@@ -69,7 +70,7 @@ def cargar_usuario(id_auth: str) -> UsuarioActual | None:
     with conexion_usuario(id_auth) as conn:
         fila = conn.execute(
             """
-            select u.id_usuario, u.nombre, u.correo, u.rol::text as rol, u.matricula, u.activo,
+            select u.id_usuario, u.nombre, u.correo, u.rol::text as rol, u.matricula, u.activo, u.sexo,
                    exists (select 1 from sigae.actividad a
                             where a.id_responsable = u.id_usuario and a.estado <> 'Inactiva') as es_responsable
               from sigae.usuario u
@@ -87,6 +88,13 @@ def get_token(cred: HTTPAuthorizationCredentials | None = Depends(_bearer)) -> s
 
 _cache_usuarios: dict[str, tuple[float, UsuarioActual]] = {}
 _USUARIO_SEG = 30
+
+
+def olvidar_usuario(id_auth: str) -> None:
+    """Borra de la caché los datos del usuario (p. ej. después de cambiar su sexo)."""
+    with _cache_lock:
+        for token in [t for t, (_, u) in _cache_usuarios.items() if u.id_auth == id_auth]:
+            _cache_usuarios.pop(token, None)
 
 
 def get_usuario_actual(token: str = Depends(get_token)) -> UsuarioActual:

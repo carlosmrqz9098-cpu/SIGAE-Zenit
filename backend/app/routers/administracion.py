@@ -111,7 +111,7 @@ def actividades(u: UsuarioActual = Depends(admin_o_personal)):
         return conn.execute(
             """
             select a.id_actividad, a.id_periodo, a.id_aula, a.id_responsable, a.nombre, a.descripcion,
-                   a.dias, a.hora_inicio, a.hora_fin, a.cupo_maximo, a.estado::text as estado,
+                   a.dias, a.hora_inicio, a.hora_fin, a.cupo_maximo, a.dirigida_a, a.estado::text as estado,
                    p.nombre as periodo, au.nombre as aula, r.nombre as responsable,
                    (select count(*) from sigae.inscripcion i
                      where i.id_actividad = a.id_actividad and i.estado = 'Activa') as inscritos,
@@ -140,10 +140,10 @@ def crear_actividad(body: ActividadEntrada, u: UsuarioActual = Depends(admin_o_p
     with conexion_usuario(u.id_auth) as conn:
         return conn.execute(
             """insert into sigae.actividad (id_periodo, id_aula, id_responsable, nombre, descripcion,
-                                            dias, hora_inicio, hora_fin, cupo_maximo)
-               values (%s, %s, %s, %s, %s, %s, %s, %s, %s) returning id_actividad""",
+                                            dias, hora_inicio, hora_fin, cupo_maximo, dirigida_a)
+               values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id_actividad""",
             (body.id_periodo, body.id_aula, body.id_responsable, body.nombre, body.descripcion,
-             body.dias, body.hora_inicio, body.hora_fin, body.cupo_maximo),
+             body.dias, body.hora_inicio, body.hora_fin, body.cupo_maximo, body.dirigida_a),
         ).fetchone()
 
 
@@ -153,10 +153,10 @@ def editar_actividad(id_actividad: int, body: ActividadEntrada, u: UsuarioActual
         return _uno_o_404(conn.execute(
             """update sigae.actividad
                   set id_periodo = %s, id_aula = %s, id_responsable = %s, nombre = %s, descripcion = %s,
-                      dias = %s, hora_inicio = %s, hora_fin = %s, cupo_maximo = %s
+                      dias = %s, hora_inicio = %s, hora_fin = %s, cupo_maximo = %s, dirigida_a = %s
                 where id_actividad = %s returning id_actividad""",
             (body.id_periodo, body.id_aula, body.id_responsable, body.nombre, body.descripcion,
-             body.dias, body.hora_inicio, body.hora_fin, body.cupo_maximo, id_actividad),
+             body.dias, body.hora_inicio, body.hora_fin, body.cupo_maximo, body.dirigida_a, id_actividad),
         ).fetchone(), "La actividad")
 
 
@@ -193,7 +193,7 @@ def borrar_actividad(id_actividad: int, u: UsuarioActual = Depends(admin_o_perso
 def usuarios(u: UsuarioActual = Depends(admin_o_personal)):
     with conexion_usuario(u.id_auth) as conn:
         filas = conn.execute(
-            """select id_usuario, nombre, correo, rol::text as rol, matricula, activo, creado_en
+            """select id_usuario, nombre, correo, rol::text as rol, matricula, sexo, activo, creado_en
                  from sigae.usuario order by activo desc, rol, nombre"""
         ).fetchall()
     # "pendiente" = alumno que se registró solo y el admin aún no acepta (nunca ha entrado).
@@ -214,9 +214,9 @@ def crear_usuario(body: UsuarioNuevo, u: UsuarioActual = Depends(solo_admin)):
     try:
         with conexion_usuario(u.id_auth) as conn:
             return conn.execute(
-                """insert into sigae.usuario (id_auth, nombre, correo, rol, matricula, activo)
-                   values (%s, %s, %s, %s::sigae.rol_usuario, %s, true) returning id_usuario""",
-                (id_auth, body.nombre, correo, body.rol, body.matricula),
+                """insert into sigae.usuario (id_auth, nombre, correo, rol, matricula, sexo, activo)
+                   values (%s, %s, %s, %s::sigae.rol_usuario, %s, %s, true) returning id_usuario""",
+                (id_auth, body.nombre, correo, body.rol, body.matricula, body.sexo),
             ).fetchone()
     except Exception:
         supabase.borrar_cuenta(id_auth)  # sin registro en SIGAE no debe quedar cuenta suelta
@@ -227,9 +227,10 @@ def crear_usuario(body: UsuarioNuevo, u: UsuarioActual = Depends(solo_admin)):
 def editar_usuario(id_usuario: int, body: UsuarioCambios, u: UsuarioActual = Depends(solo_admin)):
     with conexion_usuario(u.id_auth) as conn:
         return _uno_o_404(conn.execute(
-            """update sigae.usuario set nombre = %s, rol = %s::sigae.rol_usuario, matricula = %s, activo = %s
+            """update sigae.usuario set nombre = %s, rol = %s::sigae.rol_usuario, matricula = %s,
+                      sexo = case when %s::sigae.rol_usuario = 'Alumno' then %s else null end, activo = %s
                 where id_usuario = %s returning id_usuario""",
-            (body.nombre, body.rol, body.matricula, body.activo, id_usuario),
+            (body.nombre, body.rol, body.matricula, body.rol, body.sexo, body.activo, id_usuario),
         ).fetchone(), "El usuario")
 
 
@@ -266,21 +267,30 @@ def editar_parametro(clave: str, body: ParametroEntrada, u: UsuarioActual = Depe
 # ================================================================ bitácora y tareas
 @router.get("/bitacora", summary="Bitácora de cambios (auditoría)")
 def bitacora(entidad: str | None = Query(default=None, max_length=50),
+             buscar: str | None = Query(default=None, max_length=100),
              pagina: int = Query(default=1, ge=1), por_pagina: int = Query(default=25, ge=5, le=100),
              u: UsuarioActual = Depends(solo_admin)):
+    # buscar: por quién lo hizo, por el número de registro o por un valor que cambió (p. ej. un nombre)
+    texto = f"%{buscar.strip()}%" if buscar and buscar.strip() else None
+    filtro = """(%(entidad)s::text is null or b.entidad = %(entidad)s)
+                and (%(texto)s::text is null or coalesce(us.nombre, 'Sistema') ilike %(texto)s
+                     or b.id_registro::text ilike %(texto)s
+                     or b.valores_nuevos::text ilike %(texto)s or b.valores_anteriores::text ilike %(texto)s)"""
+    params = {"entidad": entidad, "texto": texto, "lim": por_pagina, "off": (pagina - 1) * por_pagina}
     with conexion_usuario(u.id_auth) as conn:
         total = conn.execute(
-            "select count(*) as n from sigae.bitacora where (%s::text is null or entidad = %s)", (entidad, entidad)
+            f"""select count(*) as n from sigae.bitacora b
+                  left join sigae.usuario us on us.id_usuario = b.id_usuario where {filtro}""", params
         ).fetchone()["n"]
         filas = conn.execute(
-            """select b.id_bitacora, b.fecha, b.origen, b.operacion, b.entidad, b.id_registro,
+            f"""select b.id_bitacora, b.fecha, b.origen, b.operacion, b.entidad, b.id_registro,
                       b.valores_anteriores, b.valores_nuevos, coalesce(us.nombre, 'Sistema') as usuario
                  from sigae.bitacora b
                  left join sigae.usuario us on us.id_usuario = b.id_usuario
-                where (%s::text is null or b.entidad = %s)
+                where {filtro}
                 order by b.fecha desc, b.id_bitacora desc
-                limit %s offset %s""",
-            (entidad, entidad, por_pagina, (pagina - 1) * por_pagina),
+                limit %(lim)s offset %(off)s""",
+            params,
         ).fetchall()
         entidades = [r["entidad"] for r in conn.execute(
             "select distinct entidad from sigae.bitacora order by 1").fetchall()]
@@ -292,5 +302,5 @@ def tareas(u: UsuarioActual = Depends(solo_admin)):
     with conexion_usuario(u.id_auth) as conn:
         return conn.execute(
             """select id_ejecucion, tarea, inicio, fin, resultado, detalle, error
-                 from sigae.ejecucion_tarea order by inicio desc limit 50"""
+                 from sigae.ejecucion_tarea order by inicio desc limit 300"""
         ).fetchall()

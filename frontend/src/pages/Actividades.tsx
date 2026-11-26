@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { TiraDias } from "../components/Horario";
 import { Icono } from "../components/Icono";
-import { Boton, CajaError, Campo, Cargando, Confirmar, Encabezado, Insignia, Modal, Paginacion, useAvisos, usePaginas, Vacio } from "../components/ui";
+import { Boton, CajaError, Campo, Cargando, Confirmar, DirigidaInsignia, Encabezado, Insignia, Modal, Paginacion, useAvisos, usePaginas, Vacio } from "../components/ui";
 import { api, ApiError } from "../lib/api";
 import { hora } from "../lib/formato";
 import { Enlace } from "../lib/router";
@@ -10,12 +10,12 @@ import { useCarga } from "../lib/useCarga";
 interface Actividad {
   id_actividad: number; id_periodo: number; id_aula: number; id_responsable: number | null;
   nombre: string; descripcion: string | null; dias: string; hora_inicio: string; hora_fin: string;
-  cupo_maximo: number; estado: string; periodo: string; aula: string; responsable: string | null; inscritos: number;
+  cupo_maximo: number; dirigida_a?: string; estado: string; periodo: string; aula: string; responsable: string | null; inscritos: number;
   tiene_inscripciones?: boolean;
 }
 interface Opcion { id: number; texto: string }
 
-const VACIA = { id_periodo: "", id_aula: "", id_responsable: "", nombre: "", descripcion: "", dias: "", hora_inicio: "", hora_fin: "", cupo_maximo: "" };
+const VACIA = { id_periodo: "", id_aula: "", id_responsable: "", nombre: "", descripcion: "", dias: "", hora_inicio: "", hora_fin: "", cupo_maximo: "", dirigida_a: "Mixta" };
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 export function Actividades() {
@@ -52,7 +52,7 @@ export function Actividades() {
     setForm(a === "nueva" ? VACIA : {
       id_periodo: String(a.id_periodo), id_aula: String(a.id_aula), id_responsable: a.id_responsable ? String(a.id_responsable) : "",
       nombre: a.nombre, descripcion: a.descripcion ?? "", dias: a.dias, hora_inicio: hora(a.hora_inicio),
-      hora_fin: hora(a.hora_fin), cupo_maximo: String(a.cupo_maximo),
+      hora_fin: hora(a.hora_fin), cupo_maximo: String(a.cupo_maximo), dirigida_a: a.dirigida_a ?? "Mixta",
     });
   }
 
@@ -86,6 +86,7 @@ export function Actividades() {
       id_periodo: Number(form.id_periodo), id_aula: Number(form.id_aula), id_responsable: Number(form.id_responsable),
       nombre: form.nombre, descripcion: form.descripcion || null, dias: form.dias,
       hora_inicio: form.hora_inicio, hora_fin: form.hora_fin, cupo_maximo: Number(form.cupo_maximo),
+      dirigida_a: form.dirigida_a,
     };
     try {
       if (editando === "nueva") await api("/api/actividades", { method: "POST", body: cuerpo });
@@ -150,7 +151,7 @@ export function Actividades() {
               {pag.visibles.map((a) => (
                 <tr key={a.id_actividad}>
                   <td data-col="Actividad">
-                    <strong>{a.nombre}</strong>
+                    <strong>{a.nombre} <DirigidaInsignia valor={a.dirigida_a} /></strong>
                     <span className="texto-suave">{a.periodo} · {a.aula} · {a.responsable ?? "Sin responsable"}</span>
                   </td>
                   <td data-col="Horario"><TiraDias dias={a.dias} inicio={a.hora_inicio} fin={a.hora_fin} /></td>
@@ -181,6 +182,16 @@ export function Actividades() {
             <Campo etiqueta="Periodo *" error={faltan.id_periodo}><select value={form.id_periodo} onChange={set("id_periodo")} required><option value="">Elige…</option>{opPeriodos.map((o) => <option key={o.id} value={o.id}>{o.texto}</option>)}</select></Campo>
             <Campo etiqueta="Aula *" error={faltan.id_aula}><select value={form.id_aula} onChange={set("id_aula")} required><option value="">Elige…</option>{opAulas.map((o) => <option key={o.id} value={o.id}>{o.texto}</option>)}</select></Campo>
           </div>
+          <fieldset className="campo">
+            <legend className="campo-etiqueta">¿Para quién es? *</legend>
+            <div className="opciones-seg" role="radiogroup">
+              {([["Mixta", "Mixta (todos)"], ["Varonil", "Varonil (solo hombres)"], ["Femenil", "Femenil (solo mujeres)"]] as const).map(([v, t]) => (
+                <button key={v} type="button" role="radio" aria-checked={form.dirigida_a === v} className={form.dirigida_a === v ? "activo" : ""}
+                  onClick={() => setForm((f) => ({ ...f, dirigida_a: v }))}>{t}</button>
+              ))}
+            </div>
+            <span className="campo-ayuda">En varonil y femenil, el sistema solo deja inscribirse a hombres o a mujeres.</span>
+          </fieldset>
           <Campo etiqueta="Responsable *" error={faltan.id_responsable} ayuda="Un docente, o un alumno responsable con cuenta activa."><select value={form.id_responsable} onChange={set("id_responsable")} required><option value="">Elige…</option>{opResp.map((o) => <option key={o.id} value={o.id}>{o.texto}</option>)}</select></Campo>
           <fieldset className={`campo ${faltan.dias ? "campo-error" : ""}`}>
             <legend className="campo-etiqueta">Días *</legend>

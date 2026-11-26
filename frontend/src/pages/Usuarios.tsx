@@ -1,13 +1,13 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Icono } from "../components/Icono";
-import { Boton, CajaError, Campo, Cargando, Encabezado, Modal, Paginacion, useAvisos, usePaginas, Vacio } from "../components/ui";
+import { Boton, CajaError, Campo, Cargando, Encabezado, Importante, Modal, Paginacion, useAvisos, usePaginas, Vacio } from "../components/ui";
 import { api, ApiError } from "../lib/api";
 import { fecha } from "../lib/formato";
 import { useSesion } from "../lib/sesion";
 import type { Rol } from "../lib/tipos";
 import { useCarga } from "../lib/useCarga";
 
-interface U { id_usuario: number; nombre: string; correo: string; rol: Rol; matricula: string | null; activo: boolean; creado_en: string; pendiente?: boolean }
+interface U { id_usuario: number; nombre: string; correo: string; rol: Rol; matricula: string | null; sexo?: string | null; activo: boolean; creado_en: string; pendiente?: boolean }
 const ROLES: Rol[] = ["Alumno", "Docente", "Personal", "Administrador"];
 const NOMBRE_ROL: Record<Rol, string> = {
   Alumno: "Alumno", Docente: "Docente", Personal: "Personal de Extra-Escolares", Administrador: "Administrador",
@@ -19,10 +19,10 @@ export function Usuarios() {
   const { datos, error, cargando, recargar } = useCarga<U[]>("/api/usuarios");
   const [filtro, setFiltro] = useState("");
   const [rol, setRol] = useState("");
-  const [soloPendientes, setSoloPendientes] = useState(false);
+  const [pestana, setPestana] = useState<"auto" | "nuevos" | "registrados">("auto");
   const [aceptando, setAceptando] = useState<number | null>(null);
   const [editando, setEditando] = useState<U | "nuevo" | null>(null);
-  const [form, setForm] = useState({ nombre: "", correo: "", rol: "Alumno" as Rol, matricula: "", contrasena: "", activo: true });
+  const [form, setForm] = useState({ nombre: "", correo: "", rol: "Alumno" as Rol, matricula: "", sexo: "", contrasena: "", activo: true });
   const [clave, setClave] = useState<U | null>(null);
   const [nuevaClave, setNuevaClave] = useState("");
   const [errorForm, setErrorForm] = useState<string | null>(null);
@@ -30,13 +30,14 @@ export function Usuarios() {
   const avisar = useAvisos();
 
   const pendientes = (datos ?? []).filter((u) => u.pendiente).length;
-  const lista = useMemo(() => (datos ?? []).filter((u) => (!soloPendientes || u.pendiente) &&
-    (!rol || u.rol === rol) && (!filtro || `${u.nombre} ${u.correo} ${u.matricula ?? ""}`.toLowerCase().includes(filtro.toLowerCase()))), [datos, filtro, rol, soloPendientes]);
+  const verNuevos = pestana !== "registrados" && pendientes > 0; // si hay nuevos, se abren primero
+  const lista = useMemo(() => (datos ?? []).filter((u) => (verNuevos ? u.pendiente : !u.pendiente) &&
+    (!rol || u.rol === rol) && (!filtro || `${u.nombre} ${u.correo} ${u.matricula ?? ""}`.toLowerCase().includes(filtro.toLowerCase()))), [datos, filtro, rol, verNuevos]);
 
   async function aceptar(u: U) {
     setAceptando(u.id_usuario);
     try {
-      await api(`/api/usuarios/${u.id_usuario}`, { method: "PUT", body: { nombre: u.nombre, rol: u.rol, matricula: u.matricula, activo: true } });
+      await api(`/api/usuarios/${u.id_usuario}`, { method: "PUT", body: { nombre: u.nombre, rol: u.rol, matricula: u.matricula, sexo: u.sexo ?? null, activo: true } });
       avisar(`Se aceptó a ${u.nombre}. Ya puede iniciar sesión.`);
       recargar();
     } catch (err) {
@@ -51,8 +52,8 @@ export function Usuarios() {
     setErrorForm(null);
     setEditando(u);
     setForm(u === "nuevo"
-      ? { nombre: "", correo: "", rol: "Alumno", matricula: "", contrasena: "", activo: true }
-      : { nombre: u.nombre, correo: u.correo, rol: u.rol, matricula: u.matricula ?? "", contrasena: "", activo: u.activo });
+      ? { nombre: "", correo: "", rol: "Alumno", matricula: "", sexo: "", contrasena: "", activo: true }
+      : { nombre: u.nombre, correo: u.correo, rol: u.rol, matricula: u.matricula ?? "", sexo: u.sexo ?? "", contrasena: "", activo: u.activo });
   }
 
   async function guardar(e: FormEvent) {
@@ -64,10 +65,10 @@ export function Usuarios() {
     setErrorForm(null);
     try {
       if (editando === "nuevo") {
-        await api("/api/usuarios", { method: "POST", body: { nombre: form.nombre, correo: form.correo, rol: form.rol, matricula: form.matricula || null, contrasena: form.contrasena } });
+        await api("/api/usuarios", { method: "POST", body: { nombre: form.nombre, correo: form.correo, rol: form.rol, matricula: form.matricula || null, sexo: form.sexo || null, contrasena: form.contrasena } });
         avisar(`Se registró a ${form.nombre}. Ya puede iniciar sesión.`);
       } else if (editando) {
-        await api(`/api/usuarios/${editando.id_usuario}`, { method: "PUT", body: { nombre: form.nombre, rol: form.rol, matricula: form.matricula || null, activo: form.activo } });
+        await api(`/api/usuarios/${editando.id_usuario}`, { method: "PUT", body: { nombre: form.nombre, rol: form.rol, matricula: form.matricula || null, sexo: form.sexo || null, activo: form.activo } });
         avisar("Cambios guardados");
       }
       setEditando(null);
@@ -103,14 +104,24 @@ export function Usuarios() {
     <>
       <Encabezado titulo="Usuarios" texto={esAdmin ? "Registra cuentas, asigna roles y desactiva accesos." : "Consulta de las personas registradas."}
         acciones={esAdmin && <Boton icono="mas" onClick={() => abrir("nuevo")}>Nuevo usuario</Boton>} />
-      {pendientes > 0 && (
-        <div className="aviso-pendientes" role="status">
-          <Icono nombre="persona" tam={20} />
-          <span><strong>{pendientes === 1 ? "1 alumno espera" : `${pendientes} alumnos esperan`}</strong> que aceptes su cuenta. Revisa que su nombre y matrícula sean reales antes de aceptar.</span>
-          <Boton variante="secundario" className="btn-chico" onClick={() => setSoloPendientes(!soloPendientes)}>
-            {soloPendientes ? "Ver a todos" : "Ver solo pendientes"}
-          </Boton>
-        </div>
+      <div className="pestanas" role="tablist" aria-label="Tipo de usuarios">
+        <button role="tab" aria-selected={!verNuevos} className={!verNuevos ? "activa" : ""} onClick={() => setPestana("registrados")}>
+          Usuarios registrados <span className="conteo">{(datos ?? []).length - pendientes}</span>
+        </button>
+        <button role="tab" aria-selected={verNuevos} className={verNuevos ? "activa" : ""} disabled={pendientes === 0} onClick={() => setPestana("nuevos")}>
+          Nuevos por aceptar <span className={`conteo ${pendientes ? "alerta" : ""}`}>{pendientes}</span>
+        </button>
+      </div>
+      {verNuevos && (
+        <Importante tono="ambar" titulo="Revisa antes de aceptar">
+          Estos alumnos se registraron solos y ya confirmaron su correo. Acepta solo si su nombre y matrícula son reales; hasta entonces no pueden entrar.
+        </Importante>
+      )}
+      {!verNuevos && pendientes > 0 && (
+        <Importante tono="ambar">
+          <strong>{pendientes === 1 ? "1 alumno espera" : `${pendientes} alumnos esperan`}</strong> que aceptes su cuenta.{" "}
+          <button type="button" className="enlace-boton" onClick={() => setPestana("nuevos")}>Verlos</button>
+        </Importante>
       )}
       <div className="filtros">
         <label className="buscador">
@@ -124,7 +135,7 @@ export function Usuarios() {
       </div>
       {cargando && !datos && <Cargando />}
       {error && <CajaError mensaje={error} reintentar={recargar} />}
-      {datos && lista.length === 0 && <Vacio titulo="Nadie coincide con la búsqueda" />}
+      {datos && lista.length === 0 && <Vacio titulo={filtro || rol ? "Nadie coincide con la búsqueda" : "No hay nadie aquí"} texto={filtro || rol ? "Cambia la búsqueda o el filtro de rol." : undefined} />}
       {lista.length > 0 && (
         <div className="tabla-envoltura">
           <table className="tabla">
@@ -133,7 +144,7 @@ export function Usuarios() {
               {pag.visibles.map((u) => (
                 <tr key={u.id_usuario} className={u.activo ? "" : "apagada"}>
                   <td data-col="Nombre"><strong>{u.nombre}</strong><span className="texto-suave">{u.correo}</span></td>
-                  <td data-col="Rol">{NOMBRE_ROL[u.rol] ?? u.rol}</td>
+                  <td data-col="Rol">{NOMBRE_ROL[u.rol] ?? u.rol}{u.rol === "Alumno" && <span className="texto-suave">{u.sexo ?? "Sin indicar sexo"}</span>}</td>
                   <td data-col="Matrícula">{u.matricula ?? "—"}</td>
                   <td data-col="Alta">{fecha(u.creado_en)}</td>
                   <td data-col="Acceso">{u.pendiente
@@ -171,6 +182,13 @@ export function Usuarios() {
             </Campo>
             {form.rol === "Alumno" && <Campo etiqueta="Matrícula *"><input value={form.matricula} onChange={(e) => setForm({ ...form, matricula: e.target.value })} maxLength={20} /></Campo>}
           </div>
+          {form.rol === "Alumno" && (
+            <Campo etiqueta="Sexo" ayuda="Sirve para las actividades varoniles y femeniles.">
+              <select value={form.sexo} onChange={(e) => setForm({ ...form, sexo: e.target.value })}>
+                <option value="">Sin indicar</option><option value="Hombre">Hombre</option><option value="Mujer">Mujer</option>
+              </select>
+            </Campo>
+          )}
           {editando === "nuevo" ? (
             <Campo etiqueta="Contraseña inicial *" ayuda="Mínimo 8 caracteres. Entrégala a la persona en privado.">
               <input type="text" autoComplete="new-password" value={form.contrasena} onChange={(e) => setForm({ ...form, contrasena: e.target.value })} />

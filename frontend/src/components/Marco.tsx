@@ -1,8 +1,56 @@
 import { useState, type ReactNode } from "react";
+import { api, ApiError } from "../lib/api";
 import { Enlace, useRuta } from "../lib/router";
 import { useSesion } from "../lib/sesion";
+import type { Rol, Sexo } from "../lib/tipos";
 import { MENU, puedeVer } from "../rutas";
 import { Icono } from "./Icono";
+import { Boton, Modal } from "./ui";
+
+const ROL_VISTA: Record<Rol, { texto: string; clase: string }> = {
+  Administrador: { texto: "Administrador", clase: "rol-admin" },
+  Personal: { texto: "Personal Extra-Escolares", clase: "rol-personal" },
+  Docente: { texto: "Docente", clase: "rol-docente" },
+  Alumno: { texto: "Alumno", clase: "rol-alumno" },
+};
+
+/** Al alumno que aún no dice si es hombre o mujer se le pregunta una vez. */
+function PedirSexo() {
+  const { usuario, recargarUsuario } = useSesion();
+  const [cerrada, setCerrada] = useState(false);
+  const [elegido, setElegido] = useState<Sexo | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [guardando, setGuardando] = useState(false);
+  if (!usuario || usuario.rol !== "Alumno" || usuario.sexo || cerrada) return null;
+
+  async function guardar() {
+    if (!elegido) return setError("Elige una opción.");
+    setGuardando(true);
+    setError(null);
+    try {
+      await api("/api/mi-sexo", { method: "PUT", body: { sexo: elegido } });
+      await recargarUsuario();
+    } catch (err) {
+      setError((err as ApiError).message);
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  return (
+    <Modal titulo="Antes de seguir" abierto alCerrar={() => setCerrada(true)}
+      pie={<><Boton variante="fantasma" onClick={() => setCerrada(true)}>Ahora no</Boton><Boton onClick={guardar} cargando={guardando}>Guardar</Boton></>}>
+      <p>Algunas actividades son <strong>solo para hombres</strong> (varonil) o <strong>solo para mujeres</strong> (femenil). Dinos cuál eres para mostrarte las que te tocan.</p>
+      <div className="opciones-seg grande" role="radiogroup" style={{ marginTop: 16 }}>
+        {(["Hombre", "Mujer"] as const).map((x) => (
+          <button key={x} type="button" role="radio" aria-checked={elegido === x} className={elegido === x ? "activo" : ""} onClick={() => setElegido(x)}>{x}</button>
+        ))}
+      </div>
+      <p className="campo-ayuda" style={{ marginTop: 12 }}>Solo se elige una vez. Si te equivocas, Servicios Extra-Escolares lo puede corregir.</p>
+      {error && <p className="campo-msg">{error}</p>}
+    </Modal>
+  );
+}
 
 function iniciales(nombre: string) {
   return nombre.split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("");
@@ -31,6 +79,10 @@ export function Marco({ children }: { children: ReactNode }) {
             <span>Actividades Extra-Escolares</span>
           </div>
         </div>
+        <p className={`rol-etiqueta ${ROL_VISTA[usuario.rol].clase}`}>
+          <Icono nombre={usuario.rol === "Alumno" ? "persona" : usuario.rol === "Docente" ? "grupos" : "parametros"} tam={16} />
+          {ROL_VISTA[usuario.rol].texto}
+        </p>
         <nav aria-label="Menú principal">
           <ul>
             {items.map((m) => (
@@ -62,6 +114,7 @@ export function Marco({ children }: { children: ReactNode }) {
             <Icono nombre="menu" />
           </button>
           <strong>SIGAE</strong>
+          <span className={`rol-etiqueta chica ${ROL_VISTA[usuario.rol].clase}`}>{ROL_VISTA[usuario.rol].texto}</span>
           <span className="avatar chico" aria-hidden>{iniciales(usuario.nombre)}</span>
         </div>
         <main id="contenido" tabIndex={-1}>
@@ -72,6 +125,7 @@ export function Marco({ children }: { children: ReactNode }) {
           )}
           {children}
         </main>
+        <PedirSexo />
       </div>
     </div>
   );
