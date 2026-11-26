@@ -161,3 +161,79 @@ class ConfirmarSubida(_Base):
     ruta: str = Field(min_length=1, max_length=300)
     nombre: str = Field(min_length=1, max_length=200)
     tipo_mime: str
+
+
+# ------------------------------------------------------------ registro y recuperar contraseña
+DOMINIO_ITP = "@pachuca.tecnm.mx"
+_PATRON_NOMBRE = re.compile(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+( [A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*$")
+_PATRON_MATRICULA = re.compile(r"^\d{8}$")
+_PATRON_CODIGO = re.compile(r"^\d{6}$")
+
+
+def _solo_letras(v: str) -> str:
+    v = " ".join(v.split())  # quita espacios dobles
+    if not _PATRON_NOMBRE.match(v):
+        raise ValueError("Usa solo letras (se permiten acentos, ñ y espacios)")
+    return v
+
+
+def _correo_itp(v: str) -> str:
+    if not v.endswith(DOMINIO_ITP):
+        raise ValueError("Usa tu correo institucional que termina en @pachuca.tecnm.mx")
+    return v
+
+
+def _contrasena_segura(v: str) -> str:
+    if not re.search(r"[A-Za-z]", v) or not re.search(r"\d", v):
+        raise ValueError("La contraseña debe tener al menos una letra y un número")
+    return v
+
+
+def _codigo(v: str) -> str:
+    v = v.replace(" ", "")
+    if not _PATRON_CODIGO.match(v):
+        raise ValueError("El código son 6 números")
+    return v
+
+
+Nombres = Annotated[str, Field(min_length=2, max_length=70), AfterValidator(_solo_letras)]
+CorreoITP = Annotated[Correo, AfterValidator(_correo_itp)]
+ContrasenaSegura = Annotated[str, Field(min_length=8, max_length=72), AfterValidator(_contrasena_segura)]
+Codigo = Annotated[str, Field(max_length=10), AfterValidator(_codigo)]
+
+
+class Registro(_Base):
+    nombres: Nombres
+    apellidos: Nombres
+    correo: CorreoITP
+    rol: Literal["Alumno", "Docente"]
+    matricula: str | None = Field(default=None, max_length=20)
+    contrasena: ContrasenaSegura
+
+    @model_validator(mode="after")
+    def _matricula(self):
+        if self.rol == "Alumno":
+            if not self.matricula or not _PATRON_MATRICULA.match(self.matricula):
+                raise ValueError("La matrícula son 8 números, por ejemplo 21200123")
+        else:
+            self.matricula = None
+        return self
+
+    @property
+    def nombre_completo(self) -> str:
+        return f"{self.nombres} {self.apellidos}"
+
+
+class SoloCorreo(_Base):
+    correo: Correo
+
+
+class ConfirmarCodigo(_Base):
+    correo: Correo
+    codigo: Codigo
+
+
+class NuevaContrasenaConCodigo(_Base):
+    correo: Correo
+    codigo: Codigo
+    contrasena: ContrasenaSegura

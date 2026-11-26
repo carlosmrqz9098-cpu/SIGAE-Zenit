@@ -81,6 +81,65 @@ def cambiar_contrasena(id_auth: str, contrasena: str) -> None:
         raise ErrorSIGAE(422, "No se pudo cambiar la contraseña (mínimo 8 caracteres)", "AUTH_ERROR")
 
 
+# ---------------------------------------------------------------- Registro y recuperar contraseña
+# Supabase manda los correos (con el Gmail configurado en Auth > SMTP) y guarda los códigos.
+_MUCHOS = ErrorSIGAE(429, "Se pidieron demasiados códigos. Espera unos minutos e intenta de nuevo.", "DEMASIADOS_INTENTOS")
+
+
+def _revisar_limite(r: httpx.Response) -> None:
+    if r.status_code == 429:
+        raise _MUCHOS
+
+
+def registrar(correo: str, contrasena: str, datos: dict) -> None:
+    """Crea la cuenta SIN confirmar; Supabase manda el código de 6 números al correo."""
+    r = _llamar("POST", "/auth/v1/signup", headers=_publicable(),
+                json={"email": correo, "password": contrasena, "data": datos})
+    _revisar_limite(r)
+    if r.status_code in (200, 201):
+        return
+    log.error("Auth signup %s: %s", r.status_code, r.text[:300])
+    if r.status_code in (400, 422):
+        raise ErrorSIGAE(422, "No se pudo crear la cuenta. Revisa el correo y que la contraseña tenga mínimo 8 caracteres.", "REGISTRO_INVALIDO")
+    raise ErrorSIGAE(503, "No se pudo enviar el código. Intenta en un momento.", "AUTH_NO_DISPONIBLE")
+
+
+def reenviar_codigo_registro(correo: str) -> None:
+    r = _llamar("POST", "/auth/v1/resend", headers=_publicable(), json={"type": "signup", "email": correo})
+    _revisar_limite(r)
+    if r.status_code != 200:
+        log.warning("Auth resend %s: %s", r.status_code, r.text[:300])
+
+
+def pedir_codigo_recuperacion(correo: str) -> None:
+    r = _llamar("POST", "/auth/v1/recover", headers=_publicable(), json={"email": correo})
+    _revisar_limite(r)
+    if r.status_code != 200:
+        log.warning("Auth recover %s: %s", r.status_code, r.text[:300])
+
+
+def verificar_codigo(correo: str, codigo: str, tipos: tuple[str, ...]) -> dict | None:
+    """Revisa el código del correo. Regresa la sesión (con el usuario) o None si no sirve."""
+    for tipo in tipos:
+        r = _llamar("POST", "/auth/v1/verify", headers=_publicable(),
+                    json={"type": tipo, "email": correo, "token": codigo})
+        _revisar_limite(r)
+        if r.status_code == 200:
+            return r.json()
+    return None
+
+
+def nueva_contrasena_con_sesion(access_token: str, contrasena: str) -> None:
+    r = _llamar("PUT", "/auth/v1/user", headers={**_publicable(), "Authorization": f"Bearer {access_token}"},
+                json={"password": contrasena})
+    if r.status_code == 200:
+        return
+    if r.status_code == 422 and "same_password" in r.text:
+        raise ErrorSIGAE(422, "La nueva contraseña debe ser distinta a la anterior.", "MISMA_CONTRASENA")
+    log.error("Auth update user %s: %s", r.status_code, r.text[:300])
+    raise ErrorSIGAE(422, "No se pudo cambiar la contraseña (mínimo 8 caracteres, con letras y números).", "AUTH_ERROR")
+
+
 # ---------------------------------------------------------------- Storage
 def _bucket() -> str:
     return get_settings().storage_bucket
