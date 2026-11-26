@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.core.database import cerrar_pool, conexion_sistema
 from app.core.errores import registrar_manejadores
-from app.routers import administracion, alumno, grupos, materiales, panel, sesion
+from app.routers import administracion, alumno, grupos, materiales, panel, registro, sesion
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -41,7 +41,7 @@ app.add_middleware(
 
 registrar_manejadores(app)
 
-for r in (sesion, panel, alumno, grupos, materiales, administracion):
+for r in (sesion, registro, panel, alumno, grupos, materiales, administracion):
     app.include_router(r.router)
 
 
